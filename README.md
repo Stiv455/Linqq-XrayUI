@@ -1,32 +1,35 @@
-﻿# LinqqXrayVPN
+# Linqq Xray VPN
 
-A native Windows GUI client for the Xray core, built with WinUI 3.
+A modern, native Windows GUI client for **Xray core**, built with WinUI 3.
 
 ## Features
 
-- Shadowsocks, VMess, VLESS, Trojan, Hysteria2
-- TUN mode
-- Subscription import and update
-- Custom routing rules with geoip / geosite
-- Auto-start on boot, auto-connect
-- Theme and protocol color customization
+- Support for **Shadowsocks, VMess, VLESS, Trojan, Hysteria2**
+- Full **TUN Mode** support
+- Subscription import and auto-update
+- Advanced custom routing rules (geoip / geosite)
+- Auto-start on boot + Auto-connect
+- **Multi-language support** (English / Russian) with instant language switching
+- Highly customizable UI with theme and protocol color settings
+- Compact mini mode for tray
 
-## Build
+## This Project
 
-Requires .NET 10 SDK and Windows 10 1809 or later.
+This is a **fork** of the original [XrayUI-dev](https://github.com/PhoenixNil/XrayUI-dev) project.
 
-    dotnet build -c Release
-    dotnet publish -c Release -r win-x64
+Huge thanks to **[PhoenixNil](https://github.com/PhoenixNil)** for creating the original codebase and for the excellent foundation.
 
-##  Thanks
+## Download
 
+Get the latest release from the **[Releases page](https://github.com/Stiv455/Linqq-XrayUI/releases)**.
 
-<p>
-  <a href="https://linux.do">
-    <img src="https://img.shields.io/badge/LinuxDo-community-1f6feb" alt="LinuxDo">
-  </a>
-</p>
+## Build from Source
 
-## License
+```bash
+git clone https://github.com/Stiv455/Linqq-XrayUI.git
+cd Linqq-XrayUI
 
-Apache License 2.0.
+dotnet build -c Release
+
+# Publish for your architecture
+dotnet publish -c Release -r win-x64 --self-contained false
