@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using System.Security;
 using System.Security.Principal;
 
-namespace XrayUI.Services
+namespace LinqqXrayVPN.Services
 {
     /// <summary>
     /// Manages autostart via a per-user Task Scheduler task, using direct COM
@@ -19,7 +19,7 @@ namespace XrayUI.Services
         // setting (AppSettings.IsAutoConnect) evaluated by MainViewModel.
         public const string StartupMinimizedArgument = "--startup-minimized";
 
-        private const string TaskName = "XrayUI_Autostart";
+        private const string TaskName = "Xray_Autostart";
         private const int TASK_CREATE_OR_UPDATE        = 6;
         private const int TASK_LOGON_INTERACTIVE_TOKEN = 3;
         private const uint CLSCTX_INPROC_SERVER        = 0x1;

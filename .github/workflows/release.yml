@@ -50,7 +50,7 @@ jobs:
       # for ILCompiler to be pulled in. See build.yml for details.
       - name: Publish (${{ matrix.rid }}, AOT)
         run: >
-          dotnet publish XrayUI-dev.csproj
+          dotnet publish LinqqXrayVPN.csproj
           -c Release
           -r ${{ matrix.rid }}
           -p:Platform=${{ matrix.platform }}
@@ -92,7 +92,7 @@ jobs:
         shell: pwsh
         run: |
           $publishDir = "bin/Release/net10.0-windows10.0.19041.0/${{ matrix.rid }}/publish"
-          $exe = "$publishDir/XrayUI-dev.exe"
+          $exe = "$publishDir/LinqqXrayVPN.exe"
           Write-Host "Listing $publishDir :"
           if (Test-Path $publishDir) {
             Get-ChildItem -Recurse $publishDir | ForEach-Object { $_.FullName }
@@ -109,14 +109,14 @@ jobs:
         shell: pwsh
         run: |
           $publishDir = "bin/Release/net10.0-windows10.0.19041.0/${{ matrix.rid }}/publish"
-          $zipName = "XrayUI-${{ matrix.rid }}.zip"
+          $zipName = "LinqqXrayVPN-${{ matrix.rid }}.zip"
           Compress-Archive -Path "$publishDir/*" -DestinationPath $zipName -CompressionLevel Optimal
           Write-Host "Created $zipName ($((Get-Item $zipName).Length) bytes)"
 
       - name: Generate SHA256
         shell: pwsh
         run: |
-          $zip = "XrayUI-${{ matrix.rid }}.zip"
+          $zip = "LinqqXrayVPN-${{ matrix.rid }}.zip"
           $hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
           # Standard sha256sum format: "<hash>  <filename>" (two spaces, no newline).
           [System.IO.File]::WriteAllText("$zip.sha256", "$hash  $zip", [System.Text.Encoding]::ASCII)
@@ -125,8 +125,8 @@ jobs:
       - name: Upload zip artifact
         uses: actions/upload-artifact@v4
         with:
-          name: XrayUI-${{ matrix.rid }}
-          path: XrayUI-${{ matrix.rid }}.zip*
+          name: LinqqXrayVPN-${{ matrix.rid }}
+          path: LinqqXrayVPN-${{ matrix.rid }}.zip*
           retention-days: 14
           if-no-files-found: error
 

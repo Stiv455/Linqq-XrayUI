@@ -2,7 +2,7 @@ using System;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace XrayUI.Services
+namespace LinqqXrayVPN.Services
 {
     internal static class FinalmaskJson
     {

@@ -2,9 +2,9 @@
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using XrayUI.Models;
+using LinqqXrayVPN.Models;
 
-namespace XrayUI.Services
+namespace LinqqXrayVPN.Services
 {
     /// <summary>
     /// Builds an xray-core JSON configuration string for the given server and app settings.

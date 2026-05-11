@@ -1,18 +1,18 @@
 using System.Collections.Generic;
 
-namespace XrayUI.Models
+namespace LinqqXrayVPN.Models
 {
     public class AppSettings
     {
         public int LocalMixedPort { get; set; } = 16890;
         /// <summary>"smart" | "global"</summary>
         public string RoutingMode { get; set; } = "smart";
-        /// <summary>TUN 模式是否已启用</summary>
+        /// <summary>TUN Is the mode enabled?</summary>
         public bool IsTunMode { get; set; } = false;
         public string? LastTunServerHost { get; set; }
         public bool IsStartupEnabled { get; set; } = false;
         public bool IsAutoConnect    { get; set; } = false;
-        /// <summary>true = 全局代理 (default); false = 不接管代理</summary>
+        /// <summary>true = Global proxy (default); false = Do not take over the agent</summary>
         public bool IsSystemProxyEnabled { get; set; } = true;
         /// <summary>Stable ID (ServerEntry.Id) of the most recently connected server — used for auto-connect on boot.</summary>
         public string? LastAutoConnectServerId { get; set; }
@@ -32,7 +32,7 @@ namespace XrayUI.Models
         public string? ColorHysteria2 { get; set; }
         public string? ColorFallback  { get; set; }
         public bool ShowLatencyInDetails { get; set; } = true;
-        public bool ShowAiUnlockInDetails { get; set; } = true;
+        public bool ShowUnlockInDetails { get; set; } = true;
 
         // ── Custom routing rules ──────────────────────────────────────────────
         /// <summary>User-defined routing rules. Applied only when RoutingMode == "smart".</summary>
@@ -41,5 +41,6 @@ namespace XrayUI.Models
         // ── Subscriptions ─────────────────────────────────────────────────────
         /// <summary>Persisted subscription sources. Nodes derived from these carry SubscriptionId = the entry's Id.</summary>
         public List<SubscriptionEntry>? Subscriptions { get; set; }
+        public string? Language { get; set; }
     }
 }

@@ -1,13 +1,13 @@
 using System;
 using System.IO;
 
-namespace XrayUI.Helpers
+namespace LinqqXrayVPN.Helpers
 {
     public static class AppPaths
     {
         public static string LocalAppDataDir { get; } = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "XrayUI");
+            "LinqqXrayVPN");
 
         public static string UpdatesDir { get; } = Path.Combine(LocalAppDataDir, "Updates");
     }

@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace XrayUI.Helpers
+namespace LinqqXrayVPN.Helpers
 {
     internal static class DpiHelper
     {

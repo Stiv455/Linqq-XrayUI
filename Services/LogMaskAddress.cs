@@ -1,4 +1,4 @@
-namespace XrayUI.Services
+namespace LinqqXrayVPN.Services
 {
     /// <summary>
     /// Canonical names + validation for Xray's <c>log.maskAddress</c> setting,

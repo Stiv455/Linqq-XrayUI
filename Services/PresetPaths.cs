@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace XrayUI.Services
+namespace LinqqXrayVPN.Services
 {
     internal static class PresetPaths
     {

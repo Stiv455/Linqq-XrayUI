@@ -3,7 +3,7 @@ using Microsoft.UI.Xaml.Media;
 using System;
 using Windows.UI;
 
-namespace XrayUI.Converters
+namespace LinqqXrayVPN.Converters
 {
     public partial class ColorToBrushConverter : IValueConverter
     {

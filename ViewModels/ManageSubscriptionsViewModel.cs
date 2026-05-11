@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Threading.Tasks;
-using XrayUI.Models;
+using LinqqXrayVPN.Models;
+using LinqqXrayVPN.Services;
 
-namespace XrayUI.ViewModels
+namespace LinqqXrayVPN.ViewModels
 {
     public partial class ManageSubscriptionsViewModel : ObservableObject
     {
@@ -14,7 +15,12 @@ namespace XrayUI.ViewModels
         private int _selectedIndex;
         private string _subscriptionUrl = string.Empty;
         private string _subscriptionName = string.Empty;
-
+        public LocalizationService Loc => LocalizationService.Instance;
+        public string RefreshTooltip => Loc.GetString("set5.8");
+        public string DeleteTooltip => Loc.GetString("set5.9");
+        public string DeleteTitle => Loc.GetString("set5.12");
+        public string DeleteMessage => Loc.GetString("set5.10");
+        public string DeleteConfirm => Loc.GetString("set5.11");
         public ObservableCollection<SubscriptionEntry> Subscriptions { get; }
 
         public ManageSubscriptionsViewModel(
@@ -74,7 +80,7 @@ namespace XrayUI.ViewModels
         public bool IsAddPage => SelectedIndex == 0;
         public bool IsManagePage => SelectedIndex == 1;
         public bool CanAddSubscription => IsAddPage && !string.IsNullOrWhiteSpace(SubscriptionUrl);
-        public string DialogTitle => IsAddPage ? "添加订阅" : "管理订阅";
+        public string DialogTitle => IsAddPage ? Loc.GetString("set5.1") : Loc.GetString("set5.2");
 
         public Visibility AddPageVisibility => IsAddPage ? Visibility.Visible : Visibility.Collapsed;
         public Visibility ManagePageVisibility => IsManagePage ? Visibility.Visible : Visibility.Collapsed;

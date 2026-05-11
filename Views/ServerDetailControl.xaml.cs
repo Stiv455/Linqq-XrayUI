@@ -1,11 +1,13 @@
 ﻿using System;
 using Windows.System;
+using LinqqXrayVPN.Services;
 
-namespace XrayUI.Views
+namespace LinqqXrayVPN.Views
 {
     public sealed partial class ServerDetailControl
     {
         public ServerDetailViewModel ViewModel { get; set; } = null!;
+        public LocalizationService Loc => LocalizationService.Instance;
 
         public ServerDetailControl()
         {

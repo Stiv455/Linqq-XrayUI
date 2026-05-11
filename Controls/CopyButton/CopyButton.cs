@@ -1,22 +1,25 @@
 using Microsoft.UI.Composition;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Hosting;
 using System;
 using System.Numerics;
 using Windows.ApplicationModel.DataTransfer;
+using LinqqXrayVPN.Services;
 
-namespace XrayUI.Controls;
+namespace LinqqXrayVPN.Controls;
 
 public sealed partial class CopyButton : Button
 {
+    
     public static readonly DependencyProperty CopiedMessageProperty =
         DependencyProperty.Register(
             nameof(CopiedMessage),
             typeof(string),
             typeof(CopyButton),
-            new PropertyMetadata("已复制到剪贴板"));
+            new PropertyMetadata(string.Empty));
 
     public static readonly DependencyProperty TextToCopyProperty =
         DependencyProperty.Register(
@@ -33,8 +36,10 @@ public sealed partial class CopyButton : Button
     public CopyButton()
     {
         DefaultStyleKey = typeof(CopyButton);
+        AutomationProperties.SetName(this, Loc.GetString("set11.6"));
+        ToolTipService.SetToolTip(this, Loc.GetString("set11.6"));
+        CopiedMessage = Loc.GetString("set11.5");
     }
-
     public string CopiedMessage
     {
         get => (string)GetValue(CopiedMessageProperty);
@@ -46,6 +51,7 @@ public sealed partial class CopyButton : Button
         get => (string)GetValue(TextToCopyProperty);
         set => SetValue(TextToCopyProperty, value);
     }
+    public LocalizationService Loc => LocalizationService.Instance;
 
     private void CopyButton_Click(object sender, RoutedEventArgs e)
     {

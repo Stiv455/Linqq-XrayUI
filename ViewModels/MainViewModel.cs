@@ -2,10 +2,10 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using XrayUI.Models;
-using XrayUI.Services;
+using LinqqXrayVPN.Models;
+using LinqqXrayVPN.Services;
 
-namespace XrayUI.ViewModels
+namespace LinqqXrayVPN.ViewModels
 {
     public partial class MainViewModel : BaseViewModel
     {
@@ -18,6 +18,7 @@ namespace XrayUI.ViewModels
         private string _activeLatencyText = string.Empty;
         private bool _showPersonalize;
         private bool _isMiniMode;
+        public LocalizationService Loc => LocalizationService.Instance;
 
         public ServerListViewModel   ServerList   { get; }
         public ServerDetailViewModel ServerDetail { get; }
@@ -44,9 +45,9 @@ namespace XrayUI.ViewModels
         }
 
         public string ActiveServerName =>
-            (ControlPanel.IsRunning ? _activeServer : ServerList.SelectedServer)?.Name ?? "未选择";
+            (ControlPanel.IsRunning ? _activeServer : ServerList.SelectedServer)?.Name ?? Loc.GetString("set16.1");
 
-        public string MiniStatusText => ControlPanel.IsRunning ? _activeLatencyText : "未连接";
+        public string MiniStatusText => ControlPanel.IsRunning ? _activeLatencyText : Loc.GetString("set16.2");
         public Visibility MiniDotVisibility => ControlPanel.IsRunning ? Visibility.Visible : Visibility.Collapsed;
 
         public MainViewModel(
@@ -67,12 +68,12 @@ namespace XrayUI.ViewModels
             var latencyProbe = new LatencyProbeService(
                 new TcpConnectProbeService(),
                 new PingProbeService());
-            var aiUnlockCheck = new AiUnlockCheckService();
+            var UnlockCheck = new UnlockCheckService();
 
-            Title = "Proxy Console";
+            Title = Loc.GetString("set16.3");
 
             ServerList   = new ServerListViewModel(dialogs, settings);
-            ServerDetail = new ServerDetailViewModel(latencyProbe, aiUnlockCheck);
+            ServerDetail = new ServerDetailViewModel(latencyProbe, UnlockCheck);
             ControlPanel = new ControlPanelViewModel(dialogs, settings, xray, tunService, startupService, updateService);
             Personalize  = new PersonalizeViewModel(settings);
 
@@ -107,12 +108,12 @@ namespace XrayUI.ViewModels
             // Load settings and apply to ControlPanel
             var s = await _settings.LoadSettingsAsync();
             ControlPanel.LocalPort             = s.LocalMixedPort;
-            ControlPanel.RoutingMode           = s.RoutingMode == "global" ? "全局路由" : "智能分流";
+            ControlPanel.RoutingMode           = s.RoutingMode == "global" ? Loc.GetString("set3.8") : Loc.GetString("set3.9");
             ControlPanel.IsSystemProxyEnabled  = s.IsSystemProxyEnabled;
             ControlPanel.InitializePersonalize(s);
             Personalize.LoadDisplayOptions(s);
             ServerDetail.ShowLatencyInDetails = s.ShowLatencyInDetails;
-            ServerDetail.ShowAiUnlockInDetails = s.ShowAiUnlockInDetails;
+            ServerDetail.ShowUnlockInDetails = s.ShowUnlockInDetails;
 
             // Reconcile external state vs persisted setting (external is ground truth)
             var externalEnabled = _startupService.IsStartupEnabled();
@@ -253,9 +254,9 @@ namespace XrayUI.ViewModels
             {
                 ServerDetail.ShowLatencyInDetails = Personalize.ShowLatencyInDetails;
             }
-            else if (e.PropertyName == nameof(PersonalizeViewModel.ShowAiUnlockInDetails))
+            else if (e.PropertyName == nameof(PersonalizeViewModel.ShowUnlockInDetails))
             {
-                ServerDetail.ShowAiUnlockInDetails = Personalize.ShowAiUnlockInDetails;
+                ServerDetail.ShowUnlockInDetails = Personalize.ShowUnlockInDetails;
             }
         }
 

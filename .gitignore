@@ -18,13 +18,7 @@ ARM64/
 *.user
 *.userosscache
 *.sln.docstates
-
-# User-specific files
 *.rsuser
-*.suo
-*.user
-*.userosscache
-*.sln.docstates
 
 # Build logs
 *.log
@@ -46,6 +40,10 @@ project.lock.json
 project.fragment.lock.json
 artifacts/
 
+# NuGet v3 cache
+*.nuget.props
+*.nuget.targets
+
 # Rider / JetBrains
 .idea/
 *.sln.iml
@@ -60,6 +58,7 @@ $RECYCLE.BIN/
 .DS_Store
 .AppleDouble
 .LSOverride
+._*
 
 # WinUI / MSIX packaging
 AppPackages/
@@ -74,20 +73,21 @@ BundleArtifacts/
 # Publish output
 publish/
 
-# NuGet v3 cache
-*.nuget.props
-*.nuget.targets
-
 # dotnet tool
 .dotnet/
 
-# Generated files
-Generated\ Files/
-
-# Auto-generated files
+# Generated / Auto-generated files
+Generated Files/
 *.g.cs
 *.g.i.cs
 
-# Claude / AI
-.claude/
-/CLAUDE.md
+# PDB files (debug symbols)
+*.pdb
+
+# Test results
+**/TestResults/
+
+# Environment / user config (на будущее)
+.env
+.env.local
+*.usersecrets.json

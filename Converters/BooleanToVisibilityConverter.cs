@@ -2,7 +2,7 @@
 using Microsoft.UI.Xaml.Data;
 using System;
 
-namespace XrayUI.Converters
+namespace LinqqXrayVPN.Converters
 {
     public partial class BooleanToVisibilityConverter : IValueConverter
     {

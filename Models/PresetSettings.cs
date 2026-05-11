@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace XrayUI.Models
+namespace LinqqXrayVPN.Models
 {
     public class PresetSettings
     {

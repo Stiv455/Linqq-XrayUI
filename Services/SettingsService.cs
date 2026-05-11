@@ -5,10 +5,10 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using XrayUI.Helpers;
-using XrayUI.Models;
+using LinqqXrayVPN.Helpers;
+using LinqqXrayVPN.Models;
 
-namespace XrayUI.Services
+namespace LinqqXrayVPN.Services
 {
     public class SettingsService
     {

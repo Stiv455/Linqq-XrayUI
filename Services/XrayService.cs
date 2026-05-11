@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace XrayUI.Services
+namespace LinqqXrayVPN.Services
 {
     public class XrayService
     {
@@ -18,7 +18,7 @@ namespace XrayUI.Services
 
         private static readonly string ConfigPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "XrayUI", "xray_config.json");
+            "LinqqXrayVPN", "xray_config.json");
 
         private const int LogBufferMax = 500;
 
@@ -192,8 +192,8 @@ namespace XrayUI.Services
                 _process.BeginOutputReadLine();
                 _process.BeginErrorReadLine();
 
-                AppendLog($"[启动] {ExePath}");
-                AppendLog($"[配置] {ConfigPath}");
+                AppendLog($"[Start] {ExePath}");
+                AppendLog($"[configuration] {ConfigPath}");
 
                 await Task.Delay(800);
 
@@ -202,8 +202,8 @@ namespace XrayUI.Services
                     var startupLog = StopStartupLogCaptureAndRead();
                     LastError = startupLog.Length > 0
                         ? startupLog
-                        : $"xray 立即退出（退出码 {_process.ExitCode}）";
-                    AppendLog("[错误] 启动失败：" + LastError);
+                        : $"xray Exit now (exit code {_process.ExitCode}）";
+                    AppendLog("[Error] Startup failed：" + LastError);
                     return false;
                 }
 
@@ -215,7 +215,7 @@ namespace XrayUI.Services
             {
                 StopStartupLogCapture();
                 LastError = ex.Message;
-                AppendLog("[异常] " + ex.Message);
+                AppendLog("[abnormal] " + ex.Message);
                 return false;
             }
         }
@@ -247,7 +247,7 @@ namespace XrayUI.Services
                 _process = null;
             }
 
-            AppendLog("[已停止]");
+            AppendLog("[Stopped]");
             RunningChanged?.Invoke(this, false);
         }
 
@@ -284,7 +284,7 @@ namespace XrayUI.Services
 
         private void OnProcessExited(object? sender, EventArgs e)
         {
-            AppendLog("[xray 进程已退出]");
+            AppendLog("[xray Process has exited]");
             RunningChanged?.Invoke(this, false);
         }
     }

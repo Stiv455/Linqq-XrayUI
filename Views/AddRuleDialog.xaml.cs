@@ -1,12 +1,13 @@
-using XrayUI.Helpers;
-using XrayUI.Models;
+using LinqqXrayVPN.Helpers;
+using LinqqXrayVPN.Models;
+using LinqqXrayVPN.Services;
 
-namespace XrayUI.Views
+namespace LinqqXrayVPN.Views
 {
     public sealed partial class AddRuleDialog
     {
         public CustomRoutingRule? Result { get; private set; }
-
+        public LocalizationService Loc => LocalizationService.Instance;
         public AddRuleDialog() : this(null) { }
 
         public AddRuleDialog(CustomRoutingRule? existing)
@@ -16,8 +17,8 @@ namespace XrayUI.Views
 
             if (existing != null)
             {
-                Title             = "编辑规则";
-                PrimaryButtonText = "保存";
+                Title             = Loc.GetString("set9.1");
+                PrimaryButtonText = Loc.GetString("set9.2");
 
                 TypeComboBox.SelectedIndex     = existing.Type == "ip" ? 1 : 0;
                 MatchTextBox.Text              = existing.Match;

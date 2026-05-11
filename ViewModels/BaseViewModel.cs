@@ -1,4 +1,4 @@
-﻿namespace XrayUI.ViewModels
+﻿namespace LinqqXrayVPN.ViewModels
 {
     public partial class BaseViewModel : ObservableObject
     {

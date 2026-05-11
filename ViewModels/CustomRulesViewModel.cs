@@ -3,13 +3,21 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using XrayUI.Models;
-using XrayUI.Services;
+using LinqqXrayVPN.Models;
+using LinqqXrayVPN.Services;
 
-namespace XrayUI.ViewModels
+namespace LinqqXrayVPN.ViewModels
 {
     public partial class CustomRulesViewModel : ObservableObject
     {
+        public LocalizationService Loc => LocalizationService.Instance;
+        public string Dell => Loc.GetString("set5.11");
+        public string Redact => Loc.GetString("set4.7");
+        public string Domain => Loc.GetString("domain");
+        public string Ip => Loc.GetString("ip");
+        public string DeleteConfirm => Loc.GetString("set5.11");
+
+
         private readonly SettingsService _settings;
         private readonly XrayService _xray;
         private readonly GeoDataUpdateService _geoUpdate;
@@ -171,7 +179,7 @@ namespace XrayUI.ViewModels
             try
             {
                 await _dialogs.ShowProgressDialogAsync(
-                    "正在更新路由数据",
+                    Loc.GetString("set15.1"),
                     async (progress, ct) => result = await _geoUpdate.UpdateAsync(progress, proxyUrl, ct),
                     xamlRoot);
             }
@@ -184,7 +192,7 @@ namespace XrayUI.ViewModels
             }
             catch (Exception ex)
             {
-                await _dialogs.ShowErrorAsync("更新失败", ex.Message, xamlRoot);
+                await _dialogs.ShowErrorAsync(Loc.GetString("set15.2"), ex.Message, xamlRoot);
                 return;
             }
 
@@ -192,8 +200,8 @@ namespace XrayUI.ViewModels
             if (!result.AnyUpdated)
             {
                 await _dialogs.ShowErrorAsync(
-                    "已是最新",
-                    "geoip.dat 和 geosite.dat 都已是最新版本，无需下载。",
+                    Loc.GetString("set15.3"),
+                    Loc.GetString("set15.4"),
                     xamlRoot);
                 return;
             }
@@ -204,31 +212,31 @@ namespace XrayUI.ViewModels
             {
                 if (_isTunMode?.Invoke() == true)
                 {
-                    message = "已更新。TUN 模式下请手动重启以生效。";
+                    message = Loc.GetString("set15.5");
                 }
                 else if (_reapplyRouting != null)
                 {
                     try
                     {
                         await _reapplyRouting();
-                        message = "已更新并重新加载 xray。";
+                        message = Loc.GetString("set15.6");
                     }
                     catch (Exception ex)
                     {
-                        message = $"已更新数据文件，但重启 xray 失败：{ex.Message}";
+                        message = $"{Loc.GetString("set15.7")}{ex.Message}";
                     }
                 }
                 else
                 {
-                    message = "已更新。请重启 xray 以生效。";
+                    message = Loc.GetString("set15.8");
                 }
             }
             else
             {
-                message = "已更新。下次启动 xray 时生效。";
+                message = Loc.GetString("set15.9");
             }
 
-            await _dialogs.ShowErrorAsync("更新成功", message, xamlRoot);
+            await _dialogs.ShowErrorAsync(Loc.GetString("set15.10"), message, xamlRoot);
         }
     }
 }

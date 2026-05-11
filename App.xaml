@@ -1,9 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Application
-    x:Class="XrayUI.App"
+    x:Class="LinqqXrayVPN.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:converters="using:XrayUI.Converters">
+    xmlns:converters="using:LinqqXrayVPN.Converters">
     
     <Application.Resources>
         <ResourceDictionary>
@@ -20,7 +20,7 @@
             <converters:ColorToHexStringConverter x:Key="ColorToHexStringConverter" />
             <converters:ProtocolToBrushConverter x:Key="ProtocolToBrushConverter" />
 
-            <!-- State indicator brush palette (AI unlock status) -->
+            <!-- State indicator brush palette (unlock status) -->
             <SolidColorBrush x:Key="StateNeutralBrush" Color="{ThemeResource SystemFillColorNeutral}" />
             <SolidColorBrush x:Key="StateSuccessBrush" Color="#48C78E" />
             <SolidColorBrush x:Key="StateErrorBrush"   Color="#EF4444" />

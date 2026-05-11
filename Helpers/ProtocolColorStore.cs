@@ -1,9 +1,9 @@
 using System;
 using System.Globalization;
 using Windows.UI;
-using XrayUI.Models;
+using LinqqXrayVPN.Models;
 
-namespace XrayUI.Helpers
+namespace LinqqXrayVPN.Helpers
 {
     /// <summary>
     /// Runtime mutable store for protocol badge colors.

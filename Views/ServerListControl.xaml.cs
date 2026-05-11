@@ -1,17 +1,19 @@
-﻿using System;
-using System.Linq;
-using Microsoft.UI.Xaml.Controls.Primitives;
+﻿using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using System;
+using System.Linq;
 using Windows.Foundation;
-using XrayUI.Models;
+using LinqqXrayVPN.Models;
+using LinqqXrayVPN.Services;
 
-namespace XrayUI.Views
+namespace LinqqXrayVPN.Views
 {
     public sealed partial class ServerListControl
     {
         public ServerListViewModel ViewModel { get; set; } = null!;
         public IAsyncRelayCommand? SwitchToSelectedServerCommand { get; set; }
+        public LocalizationService Loc => LocalizationService.Instance;
 
         public ServerListControl()
         {
@@ -138,22 +140,22 @@ namespace XrayUI.Views
         private MenuFlyout CreateSelectedServerContextFlyout()
         {
             var flyout = new MenuFlyout();
-
-            var editItem = CreateMenuItem("编辑", "\uE70F");
+            
+            var editItem = CreateMenuItem(Loc.GetString("set4.7"), "\uE70F");
             editItem.IsEnabled = ViewModel.CanEditSelectedServer;
             editItem.Click += (_, _) => ViewModel.EditServerCommand.Execute(null);
 
             var isFavorite = ViewModel.SelectedServer?.IsFavorite == true;
             var favoriteItem = CreateMenuItem(
-                isFavorite ? "取消收藏" : "加入收藏",
+                isFavorite ? Loc.GetString("set9.13") : Loc.GetString("set9.14"),
                 isFavorite ? "\uE8D9" : "\uE734");
             favoriteItem.Click += (_, _) => ViewModel.ToggleFavoriteCommand.Execute(null);
 
-            var deleteItem = CreateMenuItem("删除", "\uE74D");
+            var deleteItem = CreateMenuItem(Loc.GetString("set4.4"), "\uE74D");
             deleteItem.IsEnabled = ViewModel.CanRemoveSelectedServer;
             deleteItem.Click += (_, _) => ViewModel.RemoveServerCommand.Execute(null);
 
-            var shareItem = CreateMenuItem("分享", "\uE72D");
+            var shareItem = CreateMenuItem(Loc.GetString("set9.15"), "\uE72D");
             shareItem.Click += (_, _) => ViewModel.ShareServerCommand.Execute(null);
 
             flyout.Items.Add(editItem);

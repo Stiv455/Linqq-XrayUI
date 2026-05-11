@@ -1,6 +1,6 @@
 using System.Security.Principal;
 
-namespace XrayUI.Helpers;
+namespace LinqqXrayVPN.Helpers;
 
 internal static class AdminHelper
 {

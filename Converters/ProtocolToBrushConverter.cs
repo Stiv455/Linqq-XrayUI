@@ -3,9 +3,9 @@ using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
 using Windows.UI;
-using XrayUI.Helpers;
+using LinqqXrayVPN.Helpers;
 
-namespace XrayUI.Converters
+namespace LinqqXrayVPN.Converters
 {
     public partial class ProtocolToBrushConverter : IValueConverter
     {

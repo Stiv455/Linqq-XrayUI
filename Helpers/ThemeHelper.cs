@@ -1,6 +1,6 @@
 using Microsoft.UI.Xaml.Media;
 
-namespace XrayUI.Helpers
+namespace LinqqXrayVPN.Helpers
 {
     public static class ThemeHelper
     {

@@ -8,11 +8,11 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using XrayUI.Helpers;
-using XrayUI.Models;
-using XrayUI.Services;
+using LinqqXrayVPN.Helpers;
+using LinqqXrayVPN.Models;
+using LinqqXrayVPN.Services;
 
-namespace XrayUI.ViewModels
+namespace LinqqXrayVPN.ViewModels
 {
     public enum ServerSortMode
     {
@@ -28,15 +28,16 @@ namespace XrayUI.ViewModels
         {
             Timeout = TimeSpan.FromSeconds(15)
         };
+        public LocalizationService Loc => LocalizationService.Instance;
 
         private const string AllChipKey            = "__all__";
         private const string UngroupedChipKey      = "__ungrouped__";
         private const string FavoritesChipKey      = "__favorites__";
-        private const string AllChipName           = "所有服务器";
-        private const string UngroupedName         = "未分组";
-        private const string FavoritesName         = "收藏列表";
-        private const string UnnamedSubLabel       = "(未命名订阅)";
-        private const string OrphanSubLabel        = "(已删除订阅)";
+        private static readonly string AllChipName;
+        private static readonly string UngroupedName;
+        private static readonly string FavoritesName;
+        private static readonly string UnnamedSubLabel;
+        private static readonly string OrphanSubLabel;
 
         private readonly IDialogService  _dialogs;
         private readonly SettingsService _settings;
@@ -46,7 +47,16 @@ namespace XrayUI.ViewModels
         private readonly List<ServerEntry> _selectedServers = new();
         private bool _isProxyRunning;
         private bool _disposed;
+        static ServerListViewModel()
+        {
+            var loc = LocalizationService.Instance;
 
+            AllChipName = loc.GetString("set17.1");
+            UngroupedName = loc.GetString("set17.2");
+            FavoritesName = loc.GetString("set17.3");
+            UnnamedSubLabel = loc.GetString("set17.4");
+            OrphanSubLabel = loc.GetString("set17.5");
+        }
         // ── Grouping state ────────────────────────────────────────────────────
         private ServerGroupChip? _selectedChip;
         private string _searchQuery = string.Empty;
@@ -54,7 +64,7 @@ namespace XrayUI.ViewModels
         private bool _suppressRebuild;
         private ServerSortMode _sortMode = ServerSortMode.Default;
         private List<SubscriptionEntry> _knownSubscriptions = new();
-
+         
         public ObservableCollection<ServerGroupChip> GroupChips { get; } = new();
         public ObservableCollection<ServerEntry>     VisibleServers { get; } = new();
 
@@ -66,7 +76,6 @@ namespace XrayUI.ViewModels
             ProtocolColorStore.ColorsChanged += OnProtocolColorsChanged;
             _servers.CollectionChanged += OnServersCollectionChanged;
         }
-
         private void OnProtocolColorsChanged(object? sender, EventArgs e)
         {
             foreach (var s in Servers)
@@ -106,7 +115,8 @@ namespace XrayUI.ViewModels
                 {
                     OnPropertyChanged(nameof(CanSortByActive));
 
-                    // 离开 "所有" chip 时若当前正按活跃节点排序，回退到默认 — 避免菜单项被禁用却仍处于选中态的不一致。
+                    // If you are currently sorting by active nodes when leaving the "All" chip,
+                    // fall back to the default—avoid inconsistencies where menu items are disabled but still in the selected state.
                     if (_sortMode == ServerSortMode.Active && !CanSortByActive)
                     {
                         SortMode = ServerSortMode.Default;
@@ -141,7 +151,8 @@ namespace XrayUI.ViewModels
             }
         }
 
-        // "当前连接" 排序仅在 chip = All 时可用 — 其他 chip 下没必要把单一活跃节点顶到子集顶部。
+        // The "Current connection" sort is only available when chip =All—there is no need to top
+        // a single active node to the top of the subset under other chips
         public bool CanSortByActive => _selectedChip?.Kind == ServerGroupChip.ChipKind.All;
 
         // Shadow props for RadioMenuFlyoutItem.IsChecked TwoWay binding.
@@ -563,7 +574,7 @@ namespace XrayUI.ViewModels
 
             if (added == 0)
             {
-                await _dialogs.ShowErrorAsync("解析失败", "无法识别有效的节点链接，请检查后重试。");
+                await _dialogs.ShowErrorAsync(Loc.GetString("set17.6"), Loc.GetString("set17.7"));
                 return;
             }
 
@@ -614,9 +625,10 @@ namespace XrayUI.ViewModels
 
             if (entries == null)
             {
-                await _dialogs.ShowErrorAsync("订阅拉取失败", error ?? "未知错误");
+                await _dialogs.ShowErrorAsync(Loc.GetString("set17.8"), error ?? Loc.GetString("set17.9"));
             }
         }
+        
 
         private static async Task<(List<ServerEntry>? entries, string? error)> FetchSubscriptionNodesAsync(SubscriptionEntry sub)
         {
@@ -649,7 +661,10 @@ namespace XrayUI.ViewModels
             }
 
             if (entries.Count == 0)
-                return (null, "未能从订阅中解析出任何有效节点。");
+            {
+                string error = LocalizationService.Instance.GetString("set17.10");
+                return (null, error);
+            }
 
             return (entries, null);
         }
@@ -658,7 +673,7 @@ namespace XrayUI.ViewModels
         {
             if (IsSubscriptionLocked(sub.Id))
             {
-                sub.LastError = "请先停止代理后再刷新";
+                sub.LastError = Loc.GetString("set17.11");
                 return;
             }
 
@@ -668,7 +683,7 @@ namespace XrayUI.ViewModels
                 var (newEntries, error) = await FetchSubscriptionNodesAsync(sub);
                 if (newEntries == null)
                 {
-                    sub.LastError = $"更新失败: {error}";
+                    sub.LastError = $"{Loc.GetString("set17.12")} {error}";
                     return;
                 }
 
@@ -714,7 +729,7 @@ namespace XrayUI.ViewModels
         {
             if (IsSubscriptionLocked(sub.Id))
             {
-                sub.LastError = "请先停止代理后再删除";
+                sub.LastError = Loc.GetString("set17.13");
                 return false;
             }
 
@@ -828,7 +843,7 @@ namespace XrayUI.ViewModels
             var link = NodeLinkSerializer.ToLink(SelectedServer);
             if (string.IsNullOrEmpty(link))
             {
-                await _dialogs.ShowErrorAsync("不支持分享", "该节点协议暂不支持生成分享链接。");
+                await _dialogs.ShowErrorAsync(Loc.GetString("set17.14"), Loc.GetString("set17.15"));
                 return;
             }
 
@@ -849,7 +864,7 @@ namespace XrayUI.ViewModels
             if (isFavoritesChip && !server.IsFavorite)
             {
                 RebuildAll();
-                // 当前节点已不属于收藏列表，重建后选中列表里的第一个节点。
+                // The current node no longer belongs to the favorites list. After reconstruction, select the first node in the list.
                 SelectedServer = VisibleServers.FirstOrDefault();
             }
             else
@@ -867,7 +882,7 @@ namespace XrayUI.ViewModels
 
             if (hasFavorites && favoritesChip == null)
             {
-                // RebuildGroupChips 总是把 All chip 放在 index 0，收藏紧跟其后。
+                // RebuildGroupChips Always put All chip at index 0, and favorites follow closely.
                 GroupChips.Insert(1, new ServerGroupChip
                 {
                     Kind        = ServerGroupChip.ChipKind.Favorites,
@@ -891,14 +906,14 @@ namespace XrayUI.ViewModels
 
             var isBatchDelete = selectedServers.Count > 1;
             var message = isBatchDelete
-                ? $"确定要删除当前 {selectedServers.Count} 个项目?"
-                : $"确定要删除 {selectedServers[0].Name}?";
+                ? $"{Loc.GetString("set17.17")} {selectedServers.Count} {Loc.GetString("set17.20")}"
+                : $"{Loc.GetString("set17.21")} {selectedServers[0].Name}?";
 
             var confirmed = await _dialogs.ShowConfirmationAsync(
-                "确认删除",
+                Loc.GetString("set17.16"),
                 message,
-                "删除",
-                "取消",
+                Loc.GetString("set17.18"),
+                Loc.GetString("set17.19"),
                 isDanger: true);
             if (!confirmed) return;
 

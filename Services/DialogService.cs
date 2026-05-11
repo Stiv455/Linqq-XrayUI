@@ -3,11 +3,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.ComponentModel;
 using Windows.ApplicationModel.DataTransfer;
-using XrayUI.Helpers;
-using XrayUI.Models;
-using XrayUI.Views;
+using LinqqXrayVPN.Helpers;
+using LinqqXrayVPN.Models;
+using LinqqXrayVPN.Views;
 
-namespace XrayUI.Services
+namespace LinqqXrayVPN.Services
 {
     /// <summary>
     /// Builds and shows ContentDialogs using a deferred XamlRoot (captured on first use).
@@ -15,7 +15,7 @@ namespace XrayUI.Services
     public class DialogService : IDialogService
     {
         private readonly Func<XamlRoot?> _xamlRootFactory;
-
+        public LocalizationService Loc => LocalizationService.Instance;
         public DialogService(Func<XamlRoot?> xamlRootFactory)
         {
             _xamlRootFactory = xamlRootFactory;
@@ -30,7 +30,7 @@ namespace XrayUI.Services
         {
             var textBox = new TextBox
             {
-                PlaceholderText = "粘贴节点链接（支持多协议）",
+                PlaceholderText = Loc.GetString("set12.1"),
                 AcceptsReturn   = true,
                 Width           = 360,
                 Height          = 148,
@@ -40,9 +40,9 @@ namespace XrayUI.Services
             };
 
             var dialog = CreateDialog();
-            dialog.Title             = "导入节点链接";
-            dialog.PrimaryButtonText = "确定";
-            dialog.CloseButtonText   = "取消";
+            dialog.Title             = Loc.GetString("set12.2");
+            dialog.PrimaryButtonText = Loc.GetString("set12.3");
+            dialog.CloseButtonText   = Loc.GetString("set12.4");
             dialog.DefaultButton     = ContentDialogButton.Primary;
             dialog.Content = new StackPanel
             {
@@ -52,7 +52,7 @@ namespace XrayUI.Services
                 {
                     new TextBlock
                     {
-                        Text    = "支持常见协议链接",
+                        Text    = Loc.GetString("set12.5"),
                         Opacity = 0.65,
                     },
                     textBox
@@ -77,15 +77,15 @@ namespace XrayUI.Services
             {
                 if (vm.IsAddPage)
                 {
-                    dialog.PrimaryButtonText      = "添加";
-                    dialog.CloseButtonText        = "取消";
+                    dialog.PrimaryButtonText      = Loc.GetString("add");
+                    dialog.CloseButtonText        = Loc.GetString("set12.4");
                     dialog.DefaultButton          = ContentDialogButton.Primary;
                     dialog.IsPrimaryButtonEnabled = vm.CanAddSubscription;
                     return;
                 }
 
                 dialog.PrimaryButtonText      = string.Empty;
-                dialog.CloseButtonText        = "完成";
+                dialog.CloseButtonText        = Loc.GetString("set12.6");
                 dialog.DefaultButton          = ContentDialogButton.Close;
                 dialog.IsPrimaryButtonEnabled = false;
             }
@@ -110,46 +110,46 @@ namespace XrayUI.Services
         public async Task<ServerEntry?> ShowEditServerDialogAsync(ServerEntry? existing)
         {
             // ── Controls ──────────────────────────────────────────────────────
-            var txtName     = new TextBox { Header = "名称", Text = existing?.Name ?? string.Empty, MinWidth = 420 };
-            var txtHost     = new TextBox { Header = "地址 / 域名", Text = existing?.Host ?? string.Empty };
-            var numPort     = new NumberBox { Header = "端口", Value = existing?.Port ?? 443, Minimum = 1, Maximum = 65535, SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Inline };
-            var cmbProtocol = new ComboBox  { Header = "协议", MinWidth = 200 };
+            var txtName     = new TextBox { Header = Loc.GetString("set12.7"), Text = existing?.Name ?? string.Empty, MinWidth = 420 };
+            var txtHost     = new TextBox { Header = Loc.GetString("set12.8"), Text = existing?.Host ?? string.Empty };
+            var numPort     = new NumberBox { Header = Loc.GetString("set12.9"), Value = existing?.Port ?? 443, Minimum = 1, Maximum = 65535, SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Inline };
+            var cmbProtocol = new ComboBox  { Header = Loc.GetString("set12.10"), MinWidth = 200 };
             foreach (var p in new[] { "ss", "vmess", "vless", "hysteria2", "trojan" })
                 cmbProtocol.Items.Add(p);
             cmbProtocol.SelectedItem = existing?.Protocol?.ToLower() ?? "ss";
 
-            var cmbEncryption = new ComboBox { Header = "加密方式 (SS)", MinWidth = 200 };
+            var cmbEncryption = new ComboBox { Header = Loc.GetString("set12.11"), MinWidth = 200 };
             foreach (var m in new[] { "aes-128-gcm", "aes-256-gcm", "chacha20-ietf-poly1305", "2022-blake3-aes-128-gcm", "2022-blake3-aes-256-gcm", "2022-blake3-chacha20-poly1305" })
                 cmbEncryption.Items.Add(m);
             if (existing?.Encryption is { Length: > 0 } existingEnc && !cmbEncryption.Items.Contains(existingEnc))
                 cmbEncryption.Items.Add(existingEnc);
             cmbEncryption.SelectedItem = existing?.Encryption ?? "aes-128-gcm";
-            var txtPassword   = new PasswordBox { Header = "密码", Password = existing?.Password ?? string.Empty };
+            var txtPassword   = new PasswordBox { Header = Loc.GetString("set12.12"), Password = existing?.Password ?? string.Empty };
             var txtUuid       = new TextBox { Header = "UUID (VMess / VLESS)", Text = existing?.Uuid ?? string.Empty };
             var numAlterId    = new NumberBox { Header = "AlterId (VMess)", Value = existing?.AlterId ?? 0, Minimum = 0, Maximum = 65535 };
-            var cmbNetwork    = new ComboBox { Header = "传输协议", MinWidth = 200 };
+            var cmbNetwork    = new ComboBox { Header = Loc.GetString("set12.13"), MinWidth = 200 };
             foreach (var n in new[] { "tcp", "ws", "grpc", "xhttp" })
                 cmbNetwork.Items.Add(n);
             cmbNetwork.SelectedItem = existing?.Network ?? "tcp";
 
-            var txtPath     = new TextBox { Header = "路径 (WS/gRPC/XHTTP)", Text = existing?.Path ?? string.Empty };
-            var txtWsHost   = new TextBox { Header = "Host 头 (WS/XHTTP)", Text = existing?.WsHost ?? string.Empty };
-            var cmbSecurity = new ComboBox { Header = "安全", MinWidth = 200 };
+            var txtPath     = new TextBox { Header = Loc.GetString("set12.14"), Text = existing?.Path ?? string.Empty };
+            var txtWsHost   = new TextBox { Header = Loc.GetString("set12.15"), Text = existing?.WsHost ?? string.Empty };
+            var cmbSecurity = new ComboBox { Header = Loc.GetString("set12.16"), MinWidth = 200 };
             foreach (var s in new[] { "none", "tls", "reality" })
                 cmbSecurity.Items.Add(s);
             cmbSecurity.SelectedItem = existing?.Security ?? "none";
 
             var txtSni  = new TextBox { Header = "SNI", Text = existing?.Sni ?? string.Empty };
-            var txtFp   = new TextBox { Header = "指纹 (uTLS)", Text = existing?.Fingerprint ?? string.Empty };
-            var chkAllowInsecure = new CheckBox { Content = "允许不安全连接（跳过证书校验）", IsChecked = existing?.AllowInsecure ?? false };
+            var txtFp   = new TextBox { Header = Loc.GetString("set12.17"), Text = existing?.Fingerprint ?? string.Empty };
+            var chkAllowInsecure = new CheckBox { Content = Loc.GetString("set12.18"), IsChecked = existing?.AllowInsecure ?? false };
             var txtEchConfigList = new TextBox
             {
-                Header = "ECH ConfigList",
-                PlaceholderText = "例如 udp://1.1.1.1 或服务端生成的 ECHConfig",
+                Header = Loc.GetString("set12.19"),
+                PlaceholderText = Loc.GetString("set12.20"),
                 Text = existing?.EchConfigList ?? string.Empty,
                 TextWrapping = TextWrapping.Wrap
             };
-            var cmbEchForceQuery = new ComboBox { Header = "ECH Force Query", MinWidth = 200 };
+            var cmbEchForceQuery = new ComboBox { Header = Loc.GetString("set12.21"), MinWidth = 200 };
             foreach (var q in new[] { EchSettings.None, EchSettings.Half, EchSettings.Full })
                 cmbEchForceQuery.Items.Add(q);
             var existingEchForceQuery = EchSettings.NormalizeForceQuery(existing?.EchForceQuery);
@@ -159,17 +159,17 @@ namespace XrayUI.Services
             var txtPk   = new TextBox { Header = "PublicKey (Reality)", Text = existing?.PublicKey ?? string.Empty };
             var txtSid  = new TextBox { Header = "ShortId (Reality)", Text = existing?.ShortId ?? string.Empty };
             var txtSpx  = new TextBox { Header = "SpiderX (Reality)", Text = existing?.SpiderX ?? string.Empty };
-            var txtFlow = new TextBox { Header = "Flow (VLESS)", PlaceholderText = "xtls-rprx-vision 或留空", Text = existing?.Flow ?? string.Empty };
+            var txtFlow = new TextBox { Header = "Flow (VLESS)", PlaceholderText = Loc.GetString("set12.22"), Text = existing?.Flow ?? string.Empty };
             var txtVlessEncryption = new TextBox
             {
                 Header = "VLESS encryption (PQ)",
-                PlaceholderText = "留空 = none;或 mlkem768x25519plus.native.0rtt....",
+                PlaceholderText = "",
                 Text = existing?.VlessEncryption ?? string.Empty,
                 TextWrapping = TextWrapping.Wrap
             };
             var txtFinalmask = new TextBox
             {
-                Header = "Finalmask (JSON)",
+                Header = Loc.GetString("set12.23"),
                 Text = existing?.Finalmask ?? string.Empty,
                 AcceptsReturn = true,
                 Height = 104,
@@ -272,9 +272,9 @@ namespace XrayUI.Services
             };
 
             var dialog = CreateDialog();
-            dialog.Title             = existing == null ? "手动添加服务器" : "编辑服务器";
-            dialog.PrimaryButtonText = "保存";
-            dialog.CloseButtonText   = "取消";
+            dialog.Title             = existing == null ? Loc.GetString("set12.24") : Loc.GetString("set12.25");
+            dialog.PrimaryButtonText = Loc.GetString("set12.26");
+            dialog.CloseButtonText   = Loc.GetString("set12.27");
             dialog.DefaultButton     = ContentDialogButton.Primary;
             dialog.Content           = scrollViewer;
 
@@ -335,7 +335,7 @@ namespace XrayUI.Services
         {
             var numBox = new NumberBox
             {
-                Header                  = "本地端口",
+                Header                  = Loc.GetString("set12.28"),
                 Value                   = currentPort,
                 Minimum                 = 1024,
                 Maximum                 = 65535,
@@ -343,9 +343,9 @@ namespace XrayUI.Services
             };
 
             var dialog = CreateDialog();
-            dialog.Title             = "编辑本地端口";
-            dialog.PrimaryButtonText = "确定";
-            dialog.CloseButtonText   = "取消";
+            dialog.Title             = Loc.GetString("set12.29");
+            dialog.PrimaryButtonText = Loc.GetString("set12.26");
+            dialog.CloseButtonText   = Loc.GetString("set12.27");
             dialog.DefaultButton     = ContentDialogButton.Primary;
             dialog.Content           = new StackPanel
             {
@@ -356,7 +356,7 @@ namespace XrayUI.Services
                     numBox,
                     new TextBlock
                     {
-                        Text    = $"有效范围：{numBox.Minimum} - {numBox.Maximum}",
+                        Text    = $"{Loc.GetString("set12.30")} {numBox.Minimum} - {numBox.Maximum}",
                         Opacity = 0.65,
                     }
                 }
@@ -370,24 +370,36 @@ namespace XrayUI.Services
 
         // ── Error ─────────────────────────────────────────────────────────────
 
-        public async Task<bool> ShowConfirmationAsync(string title, string message, string confirmText = "确定", string cancelText = "取消", bool isDanger = false)
+    public async Task<bool> ShowConfirmationAsync(
+    string title,
+    string message,
+    string? confirmText = null,
+    string? cancelText = null,
+    bool isDanger = false)
         {
+            confirmText ??= Loc.GetString("set12.31");
+            cancelText ??= Loc.GetString("set12.32");
+
             var content = new TextBlock
             {
-                Text        = message,
+                Text = message,
                 TextWrapping = TextWrapping.Wrap,
-                MaxWidth    = 280
+                MaxWidth = 280
             };
 
             var dialog = CreateDialog();
-            dialog.Title             = title;
-            dialog.Content           = content;
+            dialog.Title = title;
+            dialog.Content = content;
             dialog.PrimaryButtonText = confirmText;
-            dialog.CloseButtonText   = cancelText;
-            dialog.DefaultButton     = isDanger ? ContentDialogButton.None : ContentDialogButton.Primary;
+            dialog.CloseButtonText = cancelText;
+            dialog.DefaultButton = isDanger ? ContentDialogButton.None : ContentDialogButton.Primary;
 
-            if (isDanger && Application.Current.Resources.TryGetValue("DangerAccentButtonStyle", out var style) && style is Style buttonStyle)
+            if (isDanger
+                && Application.Current.Resources.TryGetValue("DangerAccentButtonStyle", out var style)
+                && style is Style buttonStyle)
+            {
                 dialog.PrimaryButtonStyle = buttonStyle;
+            }
 
             var result = await dialog.ShowAsync();
             return result == ContentDialogResult.Primary;
@@ -398,7 +410,7 @@ namespace XrayUI.Services
             var dialog = CreateDialog(xamlRoot);
             dialog.Title           = title;
             dialog.Content         = message;
-            dialog.CloseButtonText = "确定";
+            dialog.CloseButtonText = Loc.GetString("set12.31");
             await dialog.ShowAsync();
         }
 
@@ -410,7 +422,7 @@ namespace XrayUI.Services
 
             var statusText = new TextBlock
             {
-                Text         = "正在准备…",
+                Text         = Loc.GetString("set12.33"),
                 TextWrapping = TextWrapping.Wrap,
                 MaxWidth     = 320,
                 HorizontalAlignment = HorizontalAlignment.Center,
@@ -425,7 +437,7 @@ namespace XrayUI.Services
 
             var dialog = CreateDialog(xamlRoot);
             dialog.Title           = title;
-            dialog.CloseButtonText = "取消";
+            dialog.CloseButtonText = Loc.GetString("set12.27");
             dialog.Content = new StackPanel
             {
                 Spacing             = 16,
@@ -493,7 +505,7 @@ namespace XrayUI.Services
 
             var statusText = new TextBlock
             {
-                Text         = "正在准备…",
+                Text         = Loc.GetString("set12.33"),
                 TextWrapping = TextWrapping.Wrap,
                 MaxWidth     = 320,
                 HorizontalAlignment = HorizontalAlignment.Center,
@@ -509,7 +521,7 @@ namespace XrayUI.Services
 
             var dialog = CreateDialog(xamlRoot);
             dialog.Title           = title;
-            dialog.CloseButtonText = "取消";
+            dialog.CloseButtonText = Loc.GetString("set12.27");
             dialog.Content = new StackPanel
             {
                 Spacing             = 12,
@@ -608,7 +620,7 @@ namespace XrayUI.Services
             header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             var titleText = new TextBlock
             {
-                Text              = "分享节点",
+                Text              = Loc.GetString("set9.15"),
                 FontSize          = 20,
                 FontWeight        = Microsoft.UI.Text.FontWeights.SemiBold,
                 VerticalAlignment = VerticalAlignment.Center,
@@ -641,7 +653,7 @@ namespace XrayUI.Services
             };
             if (Application.Current.Resources.TryGetValue("SubtleButtonStyle", out var subtleStyle2))
                 nameCopyBtn.Style = (Style)subtleStyle2;
-            ToolTipService.SetToolTip(nameCopyBtn, "复制链接");
+            ToolTipService.SetToolTip(nameCopyBtn, Loc.GetString("set12.34"));
 
             nameCopyBtn.Click += async (_, _) =>
             {
@@ -693,15 +705,15 @@ namespace XrayUI.Services
             var toggle = new ToggleSwitch
             {
                 IsOn       = currentEnabled,
-                OnContent  = "开",
-                OffContent = "关",
+                OnContent  = Loc.GetString("set12.35"),
+                OffContent = Loc.GetString("set12.36"),
                 MinWidth   = 0,
                 Margin     = new Thickness(0),
             };
 
             var toggleLabel = new TextBlock
             {
-                Text              = "开机自动启动",
+                Text              = Loc.GetString("set12.37"),
                 VerticalAlignment = VerticalAlignment.Center,
             };
 
@@ -715,7 +727,7 @@ namespace XrayUI.Services
 
             var checkBox = new CheckBox
             {
-                Content   = "自动连接上次节点",
+                Content   = Loc.GetString("set12.38"),
                 IsChecked = currentAutoConnect,
                 IsEnabled = currentEnabled,
                 Margin    = new Thickness(16, 0, 0, 0),
@@ -724,14 +736,14 @@ namespace XrayUI.Services
             toggle.Toggled += (_, _) => checkBox.IsEnabled = toggle.IsOn;
 
             var dialog = CreateDialog();
-            dialog.Title             = "开机启动";
-            dialog.PrimaryButtonText = "确认";
-            dialog.CloseButtonText   = "取消";
+            dialog.Title             = Loc.GetString("set12.39");
+            dialog.PrimaryButtonText = Loc.GetString("set12.31");
+            dialog.CloseButtonText   = Loc.GetString("set12.32");
             dialog.DefaultButton     = ContentDialogButton.Primary;
             dialog.Content = new StackPanel
             {
-                Width    = 260,
-                Spacing  = 12,
+                Width = 360,
+                Spacing = 12,
                 Children = { toggleRow, checkBox },
             };
 

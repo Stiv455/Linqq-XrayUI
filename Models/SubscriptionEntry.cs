@@ -2,8 +2,9 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
+using LinqqXrayVPN.Services;
 
-namespace XrayUI.Models
+namespace LinqqXrayVPN.Models
 {
     public class SubscriptionEntry : INotifyPropertyChanged
     {
@@ -13,7 +14,7 @@ namespace XrayUI.Models
         private DateTimeOffset? _lastUpdated;
         private string? _lastError;
         private bool _isBusy;
-
+        public LocalizationService Loc => LocalizationService.Instance;
         public string Id
         {
             get => _id;
@@ -60,15 +61,16 @@ namespace XrayUI.Models
         {
             get
             {
-                if (!_lastUpdated.HasValue) return "上次更新: 从未更新";
+                 
+                if (!_lastUpdated.HasValue) return Loc.GetString("set11.7");
                 var delta = DateTimeOffset.Now - _lastUpdated.Value;
                 string rel;
-                if (delta.TotalSeconds < 60)      rel = "刚刚";
-                else if (delta.TotalMinutes < 60) rel = $"{(int)delta.TotalMinutes} 分钟前";
-                else if (delta.TotalHours   < 24) rel = $"{(int)delta.TotalHours} 小时前";
-                else if (delta.TotalDays    < 30) rel = $"{(int)delta.TotalDays} 天前";
+                if (delta.TotalSeconds < 60)      rel = Loc.GetString("set11.8");
+                else if (delta.TotalMinutes < 60) rel = $"{(int)delta.TotalMinutes} {Loc.GetString("set11.9")}";
+                else if (delta.TotalHours   < 24) rel = $"{(int)delta.TotalHours} {Loc.GetString("set11.10")}";
+                else if (delta.TotalDays    < 30) rel = $"{(int)delta.TotalDays} {Loc.GetString("set11.11")}";
                 else                              rel = _lastUpdated.Value.LocalDateTime.ToString("yyyy-MM-dd");
-                return $"上次更新: {rel}";
+                return $"{Loc.GetString("set11.12")} {rel}";
             }
         }
 

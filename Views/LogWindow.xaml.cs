@@ -1,19 +1,21 @@
-using System;
-using System.Threading.Tasks;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Shapes;
+using System;
+using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Graphics;
-using XrayUI.Helpers;
-using XrayUI.Services;
+using LinqqXrayVPN.Helpers;
+using LinqqXrayVPN.Services;
 
-namespace XrayUI.Views
+namespace LinqqXrayVPN.Views
 {
     public sealed partial class LogWindow
     {
         // UI-update throttle: burst traffic (many lines/sec) collapses into
         // at most 1 re-render per interval instead of one per line.
         private static readonly TimeSpan FlushInterval = TimeSpan.FromMilliseconds(100);
+        public LocalizationService Loc => LocalizationService.Instance;
 
         private static readonly SolidColorBrush RunningBrush =
             new(Windows.UI.Color.FromArgb(255, 34, 197, 94));   // green
@@ -43,7 +45,7 @@ namespace XrayUI.Views
             var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
             var scale = DpiHelper.GetWindowScale(hWnd);
             AppWindow.Resize(new SizeInt32((int)Math.Round(900 * scale), (int)Math.Round(600 * scale)));
-            AppWindow.Title = "代理日志";
+            AppWindow.Title = Loc.GetString("set9.3");
 
             _xray.LogReceived     += OnLogReceived;
             _xray.RunningChanged  += OnRunningChanged;
@@ -100,9 +102,9 @@ namespace XrayUI.Views
             // XrayService owns the single source of truth; we just render a snapshot.
             var lines = _xray.GetLogBuffer();
             LogTextBlock.Text = string.Join('\n', lines);
-            LineCountText.Text = $"({lines.Count} 行)";
+            LineCountText.Text = $"({lines.Count} {Loc.GetString("set9.4")})";
         }
-
+        
         private async Task InitializeMaskAddressMenuAsync()
         {
             try
@@ -127,7 +129,7 @@ namespace XrayUI.Views
         private void UpdateStatus()
         {
             var running = _xray.IsRunning;
-            StatusText.Text = running ? "运行中" : "未运行";
+            StatusText.Text = running ? Loc.GetString("set9.5") : Loc.GetString("set9.6");
             StatusDot.Fill  = running ? RunningBrush : StoppedBrush;
         }
 
@@ -174,18 +176,18 @@ namespace XrayUI.Views
 
                 if (settings.IsTunMode)
                 {
-                    await ShowInfoAsync("日志隐私设置", "已保存，当前 TUN 会话下次启动时生效。");
+                    await ShowInfoAsync(Loc.GetString("set9.7"), Loc.GetString("set9.9"));
                     return;
                 }
-
+               
                 await _reapplyConfigAsync();
             }
             catch (Exception ex)
             {
-                await ShowInfoAsync("日志隐私设置", $"保存失败：{ex.Message}");
+                await ShowInfoAsync(Loc.GetString("set9.7"), $"Failed to save：{ex.Message}");
             }
         }
-
+        
         private async Task ShowInfoAsync(string title, string message)
         {
             var dialog = new ContentDialog
@@ -194,9 +196,9 @@ namespace XrayUI.Views
                 RequestedTheme = ThemeHelper.ActualTheme,
                 Title = title,
                 Content = message,
-                CloseButtonText = "确定"
+                CloseButtonText = Loc.GetString("set9.8")
             };
-
+            
             await dialog.ShowAsync();
         }
     }

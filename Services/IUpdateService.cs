@@ -1,9 +1,9 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using XrayUI.Models;
+using LinqqXrayVPN.Models;
 
-namespace XrayUI.Services
+namespace LinqqXrayVPN.Services
 {
     public sealed record UpdateStaging(
         string ExtractedDir,

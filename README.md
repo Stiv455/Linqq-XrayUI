@@ -1,4 +1,4 @@
-﻿# XrayUI
+﻿# LinqqXrayVPN
 
 A native Windows GUI client for the Xray core, built with WinUI 3.
 

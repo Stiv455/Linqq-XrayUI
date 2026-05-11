@@ -9,10 +9,10 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
-using XrayUI.Helpers;
-using XrayUI.Models;
+using LinqqXrayVPN.Helpers;
+using LinqqXrayVPN.Models;
 
-namespace XrayUI.Services
+namespace LinqqXrayVPN.Services
 {
      /*<summary>
      Checks GitHub Releases for a newer XrayUI build, downloads +verifies the
@@ -26,10 +26,10 @@ namespace XrayUI.Services
      </summary> */
     public sealed class UpdateService : IUpdateService
     {
+        public LocalizationService Loc => LocalizationService.Instance;
         private const string ReleaseApiUrl =
-            "https://api.github.com/repos/PhoenixNil/XrayUI-dev/releases/latest";
-
-        private const string AppExeName     = "XrayUI-dev.exe";
+            "https://api.github.com/repos/Stiv455/Linqq-XrayUI/releases/latest";
+        private const string AppExeName     = "LinqqXrayVPN.exe";
         private const string UpdaterExeName = "XrayUI.Updater.exe";
 
         public async Task<UpdateInfo?> CheckAsync(string? proxyUrl, CancellationToken ct)
@@ -62,7 +62,7 @@ namespace XrayUI.Services
             var rid = CurrentRid();
             if (rid is null) return null;
 
-            var zipName    = $"XrayUI-{rid}.zip";
+            var zipName    = $"LinqqXrayVPN-{rid}.zip";
             var sha256Name = $"{zipName}.sha256";
 
             string? zipUrl = null, shaUrl = null;
@@ -104,19 +104,19 @@ namespace XrayUI.Services
             using var client = CreateHttpClient(proxyUrl, TimeSpan.FromMinutes(10));
 
             // ── 1. .sha256 first (small, fail-fast on bad release) ─────────────────
-            progress.Report(new ProgressDialogUpdate("正在获取校验文件…"));
+            progress.Report(new ProgressDialogUpdate(Loc.GetString("set13.6")));
             string expectedHash;
             try
             {
                 var shaText = await client.GetStringAsync(info.Sha256Url, ct);
                 expectedHash = ParseSha256SumLine(shaText)
-                    ?? throw new InvalidDataException("更新校验文件格式异常");
+                    ?? throw new InvalidDataException(Loc.GetString("set13.7"));
             }
             catch (OperationCanceledException) { throw; }
             catch (InvalidDataException) { throw; }
             catch (Exception ex)
             {
-                throw new InvalidDataException("无法下载更新校验文件：" + ex.Message);
+                throw new InvalidDataException(Loc.GetString("set13.8") + ex.Message);
             }
 
             // ── 2. zip — hash is computed during the streaming write so we don't ──
@@ -126,27 +126,27 @@ namespace XrayUI.Services
                 client, info.ZipUrl, zipPath, info.ZipAssetName, progress, ct);
 
             if (!string.Equals(actualHash, expectedHash, StringComparison.OrdinalIgnoreCase))
-                throw new InvalidDataException("更新包校验失败：SHA256 与服务器公布的不一致。");
+                throw new InvalidDataException(Loc.GetString("set13.9"));
 
             // ── 4. Extract ──────────────────────────────────────────────────────────
-            progress.Report(new ProgressDialogUpdate("正在解压更新包…"));
+            progress.Report(new ProgressDialogUpdate(Loc.GetString("set13.10")));
             try
             {
                 ZipFile.ExtractToDirectory(zipPath, extractDir, overwriteFiles: true);
             }
             catch (Exception ex)
             {
-                throw new InvalidDataException("更新包解压失败：" + ex.Message);
+                throw new InvalidDataException(Loc.GetString("set13.11") + ex.Message);
             }
 
             // ── 5. Sanity check extracted contents ──────────────────────────────────
-            progress.Report(new ProgressDialogUpdate("正在验证更新包…"));
+            progress.Report(new ProgressDialogUpdate(Loc.GetString("set13.12")));
 
             var newAppExe     = Path.Combine(extractDir, AppExeName);
             var newUpdaterExe = Path.Combine(extractDir, UpdaterExeName);
 
             if (!File.Exists(newAppExe) || !File.Exists(newUpdaterExe))
-                throw new InvalidDataException("更新包内容异常：缺少必要文件。");
+                throw new InvalidDataException(Loc.GetString("set13.13"));
 
             var actualFileVersion = FileVersionInfo.GetVersionInfo(newAppExe).FileVersion;
             if (string.IsNullOrEmpty(actualFileVersion) ||
@@ -154,7 +154,7 @@ namespace XrayUI.Services
                 NormalizeForCompare(parsedFv) != NormalizeForCompare(info.NewVersion))
             {
                 throw new InvalidDataException(
-                    $"更新包版本不匹配：期望 {info.NewVersion}，实际 {actualFileVersion}。");
+                    $"{Loc.GetString("set13.14")} {info.NewVersion}，{Loc.GetString("set13.14")} {actualFileVersion}.");
             }
 
             // ── 6. Stage a runnable copy of the CURRENT updater ─────────────────────
@@ -167,14 +167,14 @@ namespace XrayUI.Services
             if (!File.Exists(currentUpdater))
             {
                 throw new FileNotFoundException(
-                    "缺少升级器组件，请重新下载完整安装包。",
+                    Loc.GetString("set13.16"),
                     currentUpdater);
             }
 
             var stagedRunner = Path.Combine(runnerDir, UpdaterExeName);
             File.Copy(currentUpdater, stagedRunner, overwrite: true);
 
-            progress.Report(new ProgressDialogUpdate("正在准备重启…"));
+            progress.Report(new ProgressDialogUpdate(Loc.GetString("set13.17")));
 
             return new UpdateStaging(extractDir, stagedRunner, installDir, info.NewVersion);
         }
@@ -242,7 +242,7 @@ namespace XrayUI.Services
 
             var client = new HttpClient(handler) { Timeout = timeout };
             client.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
-            client.DefaultRequestHeaders.UserAgent.ParseAdd($"XrayUI/{AppVersion.Current}");
+            client.DefaultRequestHeaders.UserAgent.ParseAdd($"LinqqXrayVPN/{AppVersion.Current}");
             return client;
         }
 
@@ -310,11 +310,11 @@ namespace XrayUI.Services
                 var mbTotal = total.Value / 1024.0 / 1024.0;
                 var percent = received * 100.0 / total.Value;
                 return new ProgressDialogUpdate(
-                    $"正在下载 {name} … {mbReceived:0.0} / {mbTotal:0.0} MB",
+                    $"{name} … {mbReceived:0.0} / {mbTotal:0.0} MB",
                     percent);
             }
 
-            return new ProgressDialogUpdate($"正在下载 {name} … {mbReceived:0.0} MB");
+            return new ProgressDialogUpdate($"{name} … {mbReceived:0.0} MB");
         }
     }
 }

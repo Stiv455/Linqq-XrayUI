@@ -1,12 +1,16 @@
+using LinqqXrayVPN.Helpers;
+using LinqqXrayVPN.Models;
+using LinqqXrayVPN.Services;
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using Windows.UI;
-using XrayUI.Helpers;
-using XrayUI.Models;
-using XrayUI.Services;
 
-namespace XrayUI.ViewModels
+namespace LinqqXrayVPN.ViewModels
 {
+    public record LanguageOption(string Code, string DisplayName, string NativeName);
     public partial class PersonalizeViewModel : ObservableObject
     {
         private readonly SettingsService _settings;
@@ -17,12 +21,20 @@ namespace XrayUI.ViewModels
         private Color _hysteria2Color;
         private Color _fallbackColor;
 
+        private int _selectedLanguageIndex;
         private int _selectedThemeIndex;
         private int _selectedBackdropIndex;
         private bool _showLatencyInDetails = true;
-        private bool _showAiUnlockInDetails = true;
+        private bool _showUnlockInDetails = true;
+        public XamlRoot? CurrentXamlRoot { get; set; }
+        public List<LanguageOption> SupportedLanguages { get; } = new()
+            {
+                new LanguageOption("en-US", "English", "English"),
+                new LanguageOption("ru-RU", "Русский", "Русский")
+            };
 
         public event EventHandler? CloseRequested;
+        public LocalizationService Loc => LocalizationService.Instance;
 
         public PersonalizeViewModel(SettingsService settings)
         {
@@ -134,10 +146,10 @@ namespace XrayUI.ViewModels
             set => SetProperty(ref _showLatencyInDetails, value);
         }
 
-        public bool ShowAiUnlockInDetails
+        public bool ShowUnlockInDetails
         {
-            get => _showAiUnlockInDetails;
-            set => SetProperty(ref _showAiUnlockInDetails, value);
+            get => _showUnlockInDetails;
+            set => SetProperty(ref _showUnlockInDetails, value);
         }
 
         // ── Commands ──────────────────────────────────────────────────────────
@@ -159,17 +171,26 @@ namespace XrayUI.ViewModels
         private async Task Done()
         {
             var s = await _settings.LoadSettingsAsync();
+
             ProtocolColorStore.SaveTo(s);
             s.ThemeSetting = ThemeHelper.CurrentTheme switch
             {
-                ElementTheme.Light   => "Light",
-                ElementTheme.Dark    => "Dark",
-                _                    => "Default"
+                ElementTheme.Light => "Light",
+                ElementTheme.Dark => "Dark",
+                _ => "Default"
             };
             s.BackdropSetting = ThemeHelper.CurrentBackdrop;
             s.ShowLatencyInDetails = ShowLatencyInDetails;
-            s.ShowAiUnlockInDetails = ShowAiUnlockInDetails;
+
+            s.ShowUnlockInDetails = ShowUnlockInDetails;
+            if (_selectedLanguageIndex >= 0 && _selectedLanguageIndex < SupportedLanguages.Count)
+            {
+                s.Language = SupportedLanguages[_selectedLanguageIndex].Code;
+            }
+
             await _settings.SaveSettingsAsync(s);
+            await ShowRestartDialogAsync();
+
             CloseRequested?.Invoke(this, EventArgs.Empty);
         }
 
@@ -199,12 +220,82 @@ namespace XrayUI.ViewModels
 
             _selectedBackdropIndex = ThemeHelper.CurrentBackdrop == "Acrylic" ? 1 : 0;
             OnPropertyChanged(nameof(SelectedBackdropIndex));
+
+            var lang = _settings.LoadSettingsAsync().Result.Language ?? string.Empty;
+            _selectedLanguageIndex = SupportedLanguages.FindIndex(l => l.Code == lang);
+            if (_selectedLanguageIndex < 0) _selectedLanguageIndex = 0;
+            OnPropertyChanged(nameof(SelectedLanguageIndex));
         }
 
         public void LoadDisplayOptions(AppSettings settings)
         {
             ShowLatencyInDetails = settings.ShowLatencyInDetails;
-            ShowAiUnlockInDetails = settings.ShowAiUnlockInDetails;
+            ShowUnlockInDetails = settings.ShowUnlockInDetails;
         }
+
+        public int SelectedLanguageIndex
+        {
+            get => _selectedLanguageIndex;
+            set
+            {
+                if (SetProperty(ref _selectedLanguageIndex, value))
+                {
+                    var newLang = SupportedLanguages[value].Code;
+                    _ = SaveLanguageAsync(newLang);
+                }
+            }
+        }
+        private async Task SaveLanguageAsync(string langCode)
+        {
+            try
+            {
+                var s = await _settings.LoadSettingsAsync();
+                s.Language = langCode;
+                await _settings.SaveSettingsAsync(s);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Failed to save language: {ex}");
+            }
+        }
+        private async Task ShowRestartDialogAsync()
+        {
+            var dialog = new ContentDialog
+            {
+                XamlRoot = CurrentXamlRoot,
+                Title = Loc.GetString("set17.26"),
+                Content = Loc.GetString("set17.27"),
+                PrimaryButtonText = Loc.GetString("set17.28"),
+                SecondaryButtonText = Loc.GetString("set17.29"),
+                DefaultButton = ContentDialogButton.Primary
+            };
+
+            var result = await dialog.ShowAsync();
+
+            if (result == ContentDialogResult.Primary)
+            {
+                RestartApplication();
+            }
+        }
+        private static void RestartApplication()
+        {
+            try
+            {
+                var exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
+                if (!string.IsNullOrEmpty(exePath))
+                {
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = exePath,
+                        UseShellExecute = true,
+                        Arguments = string.Join(" ", Environment.GetCommandLineArgs().Skip(1))
+                    });
+                }
+            }
+            catch { }
+
+            Environment.Exit(0);
+        }
+
     }
 }

@@ -1,9 +1,9 @@
 using System;
 using System.Text;
 using System.Text.Json.Nodes;
-using XrayUI.Models;
+using LinqqXrayVPN.Models;
 
-namespace XrayUI.Services
+namespace LinqqXrayVPN.Services
 {
     /// <summary>
     /// Produces standard share links from a ServerEntry.

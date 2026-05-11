@@ -3,40 +3,44 @@ using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.UI.Xaml.Media;
-using XrayUI.Models;
-using XrayUI.Services;
+using LinqqXrayVPN.Models;
+using LinqqXrayVPN.Services;
 
-namespace XrayUI.ViewModels
+namespace LinqqXrayVPN.ViewModels
 {
     public partial class ServerDetailViewModel : ObservableObject
     {
         private static SolidColorBrush GetBrush(string key) =>
             (SolidColorBrush)Application.Current.Resources[key];
+        public LocalizationService Loc => LocalizationService.Instance;
 
         private readonly LatencyProbeService _latencyProbe;
-        private readonly AiUnlockCheckService _aiUnlockCheck;
+        private readonly UnlockCheckService _UnlockCheck;
         private CancellationTokenSource? _latencyTestCts;
         private CancellationTokenSource? _aiCheckCts;
         private int _latencyTestVersion;
         private ServerEntry? _activeServer;
         private bool _isProxyRunning;
-        private AiUnlockStatus? _openAiStatus;
-        private AiUnlockStatus? _claudeStatus;
-        private AiUnlockStatus? _geminiStatus;
+        private UnlockStatus? _openAiStatus;
+        private UnlockStatus? _claudeStatus;
+        private UnlockStatus? _geminiStatus;
         private ServerEntry? _selectedServer;
-        private string _latencyText = "Not tested";
+        private string _latencyText;
         private bool _isTestingLatency;
         private SolidColorBrush _openAiStatusBrush = null!;
         private SolidColorBrush _claudeStatusBrush = null!;
         private SolidColorBrush _geminiStatusBrush = null!;
         private bool _showLatencyInDetails = true;
-        private bool _showAiUnlockInDetails = true;
+        private bool _showUnlockInDetails = true;
 
-        public ServerDetailViewModel(LatencyProbeService latencyProbe, AiUnlockCheckService aiUnlockCheck)
+        public ServerDetailViewModel(LatencyProbeService latencyProbe, UnlockCheckService UnlockCheck)
         {
             _latencyProbe = latencyProbe;
-            _aiUnlockCheck = aiUnlockCheck;
-            ResetAiUnlockDisplay();
+            _UnlockCheck = UnlockCheck;
+
+            _latencyText = Loc.GetString("set17.30");
+
+            ResetUnlockDisplay();
         }
 
         public ServerEntry? SelectedServer
@@ -63,7 +67,7 @@ namespace XrayUI.ViewModels
                 }
 
                 _activeServer = value;
-                UpdateAiUnlockDisplay();
+                UpdateUnlockDisplay();
             }
         }
 
@@ -78,11 +82,11 @@ namespace XrayUI.ViewModels
                 }
 
                 _isProxyRunning = value;
-                UpdateAiUnlockDisplay();
+                UpdateUnlockDisplay();
             }
         }
 
-        public string SelectedName => SelectedServer?.Name ?? "未选择服务器";
+        public string SelectedName => SelectedServer?.Name ?? Loc.GetString("set16.4");
 
         public string SelectedHost => SelectedServer?.Host ?? "-";
 
@@ -92,8 +96,8 @@ namespace XrayUI.ViewModels
 
         public string SelectedSecurityLabel
             => string.Equals(SelectedServer?.Protocol, "ss", StringComparison.OrdinalIgnoreCase)
-                ? "加密"
-                : "安全";
+                ? Loc.GetString("set16.5")
+                : Loc.GetString("set16.6");
 
         public string SelectedEncryption => SelectedServer?.Encryption ?? "-";
 
@@ -188,23 +192,23 @@ namespace XrayUI.ViewModels
             }
         }
 
-        public bool ShowAiUnlockInDetails
+        public bool ShowUnlockInDetails
         {
-            get => _showAiUnlockInDetails;
+            get => _showUnlockInDetails;
             set
             {
-                if (SetProperty(ref _showAiUnlockInDetails, value))
+                if (SetProperty(ref _showUnlockInDetails, value))
                 {
-                    OnPropertyChanged(nameof(AiUnlockVisibility));
+                    OnPropertyChanged(nameof(UnlockVisibility));
                 }
             }
         }
 
         public Visibility LatencyVisibility => ShowLatencyInDetails ? Visibility.Visible : Visibility.Collapsed;
 
-        public Visibility AiUnlockVisibility => ShowAiUnlockInDetails ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility UnlockVisibility => ShowUnlockInDetails ? Visibility.Visible : Visibility.Collapsed;
 
-        // ── AI Unlock indicators ──────────────────────────────────────────────
+        // ── Unlock indicators ──────────────────────────────────────────────
 
         public SolidColorBrush OpenAiStatusBrush
         {
@@ -238,7 +242,7 @@ namespace XrayUI.ViewModels
 
             CancelPendingLatencyTest();
             NotifySelectedServerFieldsChanged();
-            UpdateAiUnlockDisplay();
+            UpdateUnlockDisplay();
 
             if (newValue is null)
             {
@@ -330,11 +334,11 @@ namespace XrayUI.ViewModels
 
         private void ResetLatencyDisplay()
         {
-            LatencyText = "未测试";
+            LatencyText = Loc.GetString("set16.7");
             
         }
 
-        private void ResetAiUnlockDisplay()
+        private void ResetUnlockDisplay()
         {
             var neutral = GetBrush("StateNeutralBrush");
             OpenAiStatusBrush = neutral;
@@ -342,30 +346,30 @@ namespace XrayUI.ViewModels
             GeminiStatusBrush = neutral;
         }
 
-        private void ClearAiUnlockResults()
+        private void ClearUnlockResults()
         {
             _openAiStatus = null;
             _claudeStatus = null;
             _geminiStatus = null;
         }
 
-        private void UpdateAiUnlockDisplay()
+        private void UpdateUnlockDisplay()
         {
             if (!IsProxyRunning || SelectedServer is null || !ReferenceEquals(SelectedServer, ActiveServer))
             {
-                ResetAiUnlockDisplay();
+                ResetUnlockDisplay();
                 return;
             }
 
-            OpenAiStatusBrush = ResolveAiUnlockBrush(_openAiStatus);
-            ClaudeStatusBrush = ResolveAiUnlockBrush(_claudeStatus);
-            GeminiStatusBrush = ResolveAiUnlockBrush(_geminiStatus);
+            OpenAiStatusBrush = ResolveUnlockBrush(_openAiStatus);
+            ClaudeStatusBrush = ResolveUnlockBrush(_claudeStatus);
+            GeminiStatusBrush = ResolveUnlockBrush(_geminiStatus);
         }
 
-        private static SolidColorBrush ResolveAiUnlockBrush(AiUnlockStatus? status) => status switch
+        private static SolidColorBrush ResolveUnlockBrush(UnlockStatus? status) => status switch
         {
-            AiUnlockStatus.Unlocked => GetBrush("StateSuccessBrush"),
-            AiUnlockStatus.Blocked  => GetBrush("StateErrorBrush"),
+            UnlockStatus.Unlocked => GetBrush("StateSuccessBrush"),
+            UnlockStatus.Blocked  => GetBrush("StateErrorBrush"),
             _                       => GetBrush("StateNeutralBrush")
         };
 
@@ -415,17 +419,17 @@ namespace XrayUI.ViewModels
 
             if (!isRunning)
             {
-                ClearAiUnlockResults();
-                UpdateAiUnlockDisplay();
+                ClearUnlockResults();
+                UpdateUnlockDisplay();
                 return;
             }
 
-            ClearAiUnlockResults();
-            UpdateAiUnlockDisplay();
-            _ = RunAiUnlockChecksAsync(httpProxyPort);
+            ClearUnlockResults();
+            UpdateUnlockDisplay();
+            _ = RunUnlockChecksAsync(httpProxyPort);
         }
 
-        private async Task RunAiUnlockChecksAsync(int httpProxyPort)
+        private async Task RunUnlockChecksAsync(int httpProxyPort)
         {
             var cts = new CancellationTokenSource();
             _aiCheckCts = cts;
@@ -433,9 +437,9 @@ namespace XrayUI.ViewModels
             try
             {
                 // Run all checks in parallel
-                var openAiTask = _aiUnlockCheck.CheckOpenAiAsync(httpProxyPort, cts.Token);
-                var claudeTask = _aiUnlockCheck.CheckClaudeAsync(httpProxyPort, cts.Token);
-                var geminiTask = _aiUnlockCheck.CheckGeminiAsync(httpProxyPort, cts.Token);
+                var openAiTask = _UnlockCheck.CheckYouTubeAsync(httpProxyPort, cts.Token);
+                var claudeTask = _UnlockCheck.CheckTelegramAsync(httpProxyPort, cts.Token);
+                var geminiTask = _UnlockCheck.CheckDiscordAsync(httpProxyPort, cts.Token);
 
                 var results = await Task.WhenAll(openAiTask, claudeTask, geminiTask);
 
@@ -444,7 +448,7 @@ namespace XrayUI.ViewModels
                 _openAiStatus = results[0];
                 _claudeStatus = results[1];
                 _geminiStatus = results[2];
-                UpdateAiUnlockDisplay();
+                UpdateUnlockDisplay();
             }
             catch (OperationCanceledException)
             {
@@ -472,7 +476,7 @@ namespace XrayUI.ViewModels
             _latencyTestCts = cts;
 
             IsTestingLatency = true;
-            LatencyText = "测试中...";
+            LatencyText = Loc.GetString("set16.8");
 
             try
             {
@@ -489,8 +493,8 @@ namespace XrayUI.ViewModels
                 LatencyText = result.Status switch
                 {
                     LatencyProbeStatus.Success => $"{result.Milliseconds ?? 0} ms",
-                    LatencyProbeStatus.Timeout => "超时",
-                    _ => "失败"
+                    LatencyProbeStatus.Timeout => Loc.GetString("set16.9"),
+                    _ => Loc.GetString("set16.10")
                 };
             }
             catch (OperationCanceledException) when (cts.IsCancellationRequested)

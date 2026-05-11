@@ -1,9 +1,9 @@
 {
   "profiles": {
-    "XrayUI-dev (Package)": {
+    "LinqqXrayVPN (Package)": {
       "commandName": "MsixPackage"
     },
-    "XrayUI-dev (Unpackaged)": {
+    "LinqqXrayVPNv (Unpackaged)": {
       "commandName": "Project"
     }
   }

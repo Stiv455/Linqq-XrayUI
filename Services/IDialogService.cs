@@ -1,9 +1,9 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using XrayUI.Models;
+using LinqqXrayVPN.Models;
 
-namespace XrayUI.Services
+namespace LinqqXrayVPN.Services
 {
     public interface IDialogService
     {
@@ -12,7 +12,13 @@ namespace XrayUI.Services
         Task<ServerEntry?> ShowEditServerDialogAsync(ServerEntry? existing);
         Task<int?> ShowEditPortDialogAsync(int currentPort);
         Task ShowErrorAsync(string title, string message, XamlRoot? xamlRoot = null);
-        Task<bool> ShowConfirmationAsync(string title, string message, string confirmText = "确定", string cancelText = "取消", bool isDanger = false);
+        Task<bool> ShowConfirmationAsync(
+            string title,
+            string message,
+            string? confirmText = null,
+            string? cancelText = null,
+            bool isDanger = false);
+
         Task ShowShareLinkDialogAsync(string serverName, string link);
         Task<(bool enabled, bool autoConnect)?> ShowStartupDialogAsync(bool currentEnabled, bool currentAutoConnect);
 

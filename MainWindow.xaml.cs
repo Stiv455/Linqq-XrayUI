@@ -9,10 +9,10 @@ using Windows.Graphics;
 using Windows.UI;
 using WinUIEx;
 using WinUIEx.Messaging;
-using XrayUI.Helpers;
-using XrayUI.Services;
+using LinqqXrayVPN.Helpers;
+using LinqqXrayVPN.Services;
 
-namespace XrayUI
+namespace LinqqXrayVPN
 {
     public sealed partial class MainWindow
     {
@@ -35,11 +35,11 @@ namespace XrayUI
         private const uint WmNclButtonDown   = 0x00A1;
         private const uint WmNclButtonDblClk = 0x00A3;
         private const int HtCaption = 0x0002;
-        private const int FullWindowWidth = 950;
-        private const int FullWindowHeight = 600;
+        private const int FullWindowWidth = 1150;
+        private const int FullWindowHeight = 650;
         private const int MiniWindowWidth = 330;
         private const int MiniWindowHeight = 136;
-
+        public LocalizationService Loc => LocalizationService.Instance;
         public MainViewModel ViewModel { get; }
 
         public MainWindow(bool startMinimized = false)
@@ -138,13 +138,13 @@ namespace XrayUI
             {
                 var flyout = new MenuFlyout();
 
-                var openItem = new MenuFlyoutItem { Text = "\u6253\u5f00\u7a97\u53e3" };
+                var openItem = new MenuFlyoutItem { Text = Loc.GetString("set17.22") };
                 openItem.Click += (_, _) => RestoreFromTray();
                 flyout.Items.Add(openItem);
 
                 flyout.Items.Add(new MenuFlyoutSeparator());
 
-                var exitItem = new MenuFlyoutItem { Text = "\u9000\u51fa" };
+                var exitItem = new MenuFlyoutItem { Text = Loc.GetString("set17.23") };
                 exitItem.Click += (_, _) => ExitApplication();
                 flyout.Items.Add(exitItem);
 

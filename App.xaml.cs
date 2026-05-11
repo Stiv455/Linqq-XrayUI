@@ -3,13 +3,13 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.Windows.AppLifecycle;
-using XrayUI.Services;
+using LinqqXrayVPN.Services;
 
-namespace XrayUI
+namespace LinqqXrayVPN
 {
     public partial class App
     {
-        private const string SingleInstanceKey = "XrayUI.MainInstance";
+        private const string SingleInstanceKey = "LinqqXrayVPN.MainInstance";
         private const string ParentPidArgumentPrefix = "--parent-pid=";
         private const string TunArgument = "--tun";
         private const uint ShutdownNoRetry = 0x00000001;
@@ -32,43 +32,52 @@ namespace XrayUI
 
         protected override async void OnLaunched(LaunchActivatedEventArgs args)
         {
+            await SetAppLanguageAsync();
+
             var cmdArgs = Environment.GetCommandLineArgs();
             var parentPid = TryGetParentProcessId(cmdArgs);
             var startMinimized = cmdArgs.Contains(StartupService.StartupMinimizedArgument, StringComparer.OrdinalIgnoreCase);
             var isTunLaunch = cmdArgs.Contains(TunArgument, StringComparer.OrdinalIgnoreCase);
             var isTunTakeover = isTunLaunch && parentPid.HasValue;
 
+            Debug.WriteLine($"[Launch] startMinimized = {startMinimized}, isTunLaunch = {isTunLaunch}");
+
             if (!isTunTakeover && await TryRedirectToExistingInstanceAsync(startMinimized))
             {
+                Debug.WriteLine("[Launch] Redirected to existing instance");
                 return;
             }
 
-            _window = new MainWindow(startMinimized);
-            _window.Closed += (_, _) => CleanupOnExit();
-
-            // 检测 --tun 参数：以管理员身份重启后自动开启 TUN 模式
-            if (isTunLaunch)
+            try
             {
-                if (_window is MainWindow mw)
-                    mw.ViewModel.ControlPanel.SetTunEnabledSilently(true);
+                _window = new MainWindow(startMinimized);
+                _window.Closed += (_, _) => CleanupOnExit();
+
+                if (isTunLaunch)
+                {
+                    if (_window is MainWindow mw)
+                        mw.ViewModel.ControlPanel.SetTunEnabledSilently(true);
+                }
+
+                if (startMinimized)
+                {
+                    _window.AppWindow.Move(new Windows.Graphics.PointInt32(-32000, -32000));
+                }
+
+                _window.Activate();
+                Debug.WriteLine("[Launch] Window.Activate()");
+
+                if (startMinimized)
+                {
+                    _window.AppWindow.IsShownInSwitchers = false;
+                    _window.AppWindow.Hide();
+                }
             }
-
-            // Park the window off-screen before Activate() so the brief window
-            // of visibility between Activate and the first Hide is invisible
-            // to the user — synchronous Hide alone isn't enough because DWM
-            // composes frames on its own thread. MainWindow centers the window
-            // the first time the user opens it from the tray.
-            if (startMinimized)
+            catch (Exception ex)
             {
-                _window.AppWindow.Move(new Windows.Graphics.PointInt32(-32000, -32000));
-            }
-
-            _window.Activate();
-
-            if (startMinimized)
-            {
-                _window.AppWindow.IsShownInSwitchers = false;
-                _window.AppWindow.Hide();
+                Debug.WriteLine($"[Launch] Error: {ex.Message}");
+                Debug.WriteLine(ex.StackTrace);
+                return;
             }
 
             if (parentPid.HasValue)
@@ -82,7 +91,31 @@ namespace XrayUI
                 mainWindow.RestoreFromTray();
             }
         }
+        private async Task SetAppLanguageAsync()
+        {
+            Debug.WriteLine("[] SetAppLanguageAsync started");
 
+            try
+            {
+                var settingsService = new SettingsService();
+                var settings = await settingsService.LoadSettingsAsync();
+
+                string lang = !string.IsNullOrEmpty(settings.Language) ? settings.Language : "en-US";
+
+                Debug.WriteLine($"[Language] Set: {lang}");
+
+                // Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = lang;
+
+                await LocalizationService.Instance.LoadLanguageAsync(lang);
+
+                Debug.WriteLine("[Language] Good");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[Language] Error: {ex.Message}");
+                Debug.WriteLine(ex.StackTrace);
+            }
+        }
         public void RequestShutdown(bool fastShutdown = false)
         {
             CleanupOnExit(fastShutdown);
@@ -259,7 +292,7 @@ namespace XrayUI
             catch (Exception ex)
             {
                 Debug.WriteLine($"[SingleInstance] Failed to terminate duplicate process cleanly: {ex}");
-                Environment.FailFast("Duplicate XrayUI instance could not exit without running shutdown cleanup.", ex);
+                Environment.FailFast("Duplicate LinqqXrayVPN instance could not exit without running shutdown cleanup.", ex);
             }
         }
 

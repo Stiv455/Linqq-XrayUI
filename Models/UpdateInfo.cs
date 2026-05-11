@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace XrayUI.Models
+namespace LinqqXrayVPN.Models
 {
     // Minimal subset of the GitHub Releases API response — only the fields we use.
     internal sealed class GhRelease

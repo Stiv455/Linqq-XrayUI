@@ -6,7 +6,7 @@ using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace XrayUI.Services
+namespace LinqqXrayVPN.Services
 {
     /// <summary>
     /// Downloads geoip.dat / geosite.dat from Loyalsoldier/v2ray-rules-dat.
@@ -19,6 +19,7 @@ namespace XrayUI.Services
             "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/{0}.dat";
 
         private static readonly string[] Files = { "geosite", "geoip" };
+        public LocalizationService Loc => LocalizationService.Instance;
 
         /// <summary>Result of an update run. AnyUpdated == true iff at least one .dat was actually replaced.</summary>
         public readonly record struct UpdateResult(int UpdatedCount, int SkippedCount)
@@ -38,7 +39,7 @@ namespace XrayUI.Services
             {
                 handler.Proxy    = new WebProxy(proxyUrl);
                 handler.UseProxy = true;
-                progress.Report($"通过本地代理下载（{proxyUrl}）…");
+                progress.Report($"{Loc.GetString("set13.1")}（{proxyUrl}）…"); 
             }
             else
             {
@@ -49,7 +50,7 @@ namespace XrayUI.Services
 
             using var client = new HttpClient(handler);
             client.Timeout = TimeSpan.FromMinutes(5);
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("XrayUI");
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("LinqqXrayVPN");
 
             Directory.CreateDirectory(XrayService.RulesDir);
 
@@ -64,7 +65,7 @@ namespace XrayUI.Services
                 var sumUrl = url + ".sha256sum";
                 var target = Path.Combine(XrayService.RulesDir, $"{name}.dat");
 
-                progress.Report($"正在检查 {name}.dat …");
+                progress.Report($"{Loc.GetString("set12.2")} {name}.dat …");
 
                 // If the hash fetch fails (404, network), fall through to unconditional download — v2rayN parity.
                 string? remoteHash = await TryFetchRemoteHashAsync(client, sumUrl, ct);
@@ -74,7 +75,7 @@ namespace XrayUI.Services
                     var localHash = await ComputeSha256Async(target, ct);
                     if (string.Equals(localHash, remoteHash, StringComparison.OrdinalIgnoreCase))
                     {
-                        progress.Report($"{name}.dat 已是最新");
+                        progress.Report($"{name}.dat {Loc.GetString("set12.3")}");
                         skipped++;
                         continue;
                     }
@@ -91,7 +92,7 @@ namespace XrayUI.Services
                         if (!string.Equals(downloadedHash, remoteHash, StringComparison.OrdinalIgnoreCase))
                         {
                             throw new InvalidDataException(
-                                $"{name}.dat 校验失败：下载文件的 SHA256 与服务器公布的不一致。");
+                                $"{name}.dat {Loc.GetString("set12.4")}");
                         }
                     }
 
@@ -199,10 +200,11 @@ namespace XrayUI.Services
 
         private static string FormatProgress(string name, long received, long? total)
         {
+
             var mbReceived = received / 1024.0 / 1024.0;
             return total.HasValue
-                ? $"正在下载 {name} … {mbReceived:0.0} / {total.Value / 1024.0 / 1024.0:0.0} MB"
-                : $"正在下载 {name} … {mbReceived:0.0} MB";
+                ? $"{name} … {mbReceived:0.0} / {total.Value / 1024.0 / 1024.0:0.0} MB"
+                : $"{name} … {mbReceived:0.0} MB";
         }
     }
 }

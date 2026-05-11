@@ -4,9 +4,9 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
-using XrayUI.Models;
+using LinqqXrayVPN.Models;
 
-namespace XrayUI.Services;
+namespace LinqqXrayVPN.Services;
 
 [JsonSourceGenerationOptions(
     WriteIndented = true,
@@ -21,6 +21,7 @@ namespace XrayUI.Services;
 [JsonSerializable(typeof(PresetSettings))]
 [JsonSerializable(typeof(GhRelease))]
 [JsonSerializable(typeof(GhAsset))]
+[JsonSerializable(typeof(Dictionary<string, string>))]
 internal partial class AppJsonSerializerContext : JsonSerializerContext
 {
     // Write-side options that emit CJK / emoji as literal UTF-8 instead of \uXXXX escapes.

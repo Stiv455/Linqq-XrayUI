@@ -1,7 +1,8 @@
 ﻿using System;
 using Windows.System;
+using LinqqXrayVPN.Services;
 
-namespace XrayUI.Views
+namespace LinqqXrayVPN.Views
 {
     public sealed partial class ControlPanelControl
     {
@@ -9,7 +10,7 @@ namespace XrayUI.Views
         private CustomRulesWindow? _customRulesWindow;
 
         public ControlPanelViewModel ViewModel { get; set; } = null!;
-
+        public LocalizationService Loc => LocalizationService.Instance;
         public ControlPanelControl()
         {
             this.InitializeComponent();
@@ -31,7 +32,7 @@ namespace XrayUI.Views
 
         private async void GitHubButton_Click(object sender, RoutedEventArgs e)
         {
-            await Launcher.LaunchUriAsync(new Uri("https://github.com/PhoenixNil/XrayUI-dev"));
+            await Launcher.LaunchUriAsync(new Uri("https://github.com/Stiv455/Linqq-XrayUI"));
         }
 
         public void CloseLogWindow()

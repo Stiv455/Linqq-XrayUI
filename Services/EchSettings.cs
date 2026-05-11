@@ -1,4 +1,4 @@
-namespace XrayUI.Services
+namespace LinqqXrayVPN.Services
 {
     /// <summary>
     /// Shared constants and normalization for VLESS+TLS Encrypted Client Hello (ECH) settings.

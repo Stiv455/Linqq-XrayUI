@@ -1,6 +1,6 @@
 using System;
 
-namespace XrayUI.Helpers
+namespace LinqqXrayVPN.Helpers
 {
     public static class AppVersion
     {

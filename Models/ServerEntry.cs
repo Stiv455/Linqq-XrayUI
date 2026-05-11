@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace XrayUI.Models
+namespace LinqqXrayVPN.Models
 {
     public partial class ServerEntry : ObservableObject
     {

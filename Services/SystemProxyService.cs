@@ -2,9 +2,9 @@
 using System.Runtime.InteropServices;
 using Microsoft.Win32;
 
-namespace XrayUI.Services
+namespace LinqqXrayVPN.Services
 {
-    // 设置 / 清除 Windows 系统代理（WinInet / IE 代理，浏览器及大多数应用遵循此设置）。
+    // Set /clear the Windows system proxy (WinInet /IE proxy, browsers and most applications follow this setting).
     public static class SystemProxyService
     {
         private const string RegPath =
@@ -19,17 +19,17 @@ namespace XrayUI.Services
 
         // ── Public API ────────────────────────────────────────────────────────
 
-        /// <summary>启用系统代理，将 HTTP/HTTPS 流量指向 host:port。</summary>
+        /// <summary>Enable the system proxy to point HTTP/HTTPS traffic to host:port.</summary>
         public static void SetProxy(string host, int port)
         {
             try
             {
                 using var key = Registry.CurrentUser.OpenSubKey(RegPath, writable: true)
-                             ?? throw new InvalidOperationException("无法打开注册表项：" + RegPath);
+                             ?? throw new InvalidOperationException("I can't open the registry key：" + RegPath);
 
                 key.SetValue("ProxyEnable", 1, RegistryValueKind.DWord);
                 key.SetValue("ProxyServer", $"{host}:{port}", RegistryValueKind.String);
-                // 本地地址绕过代理
+                // Local address bypasses the proxy
                 key.SetValue("ProxyOverride",
                     "localhost;127.*;10.*;172.16.*;172.17.*;172.18.*;172.19.*;" +
                     "172.20.*;172.21.*;172.22.*;172.23.*;172.24.*;172.25.*;172.26.*;" +
@@ -41,11 +41,11 @@ namespace XrayUI.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[SystemProxy] SetProxy 失败: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[SystemProxy] SetProxy failed: {ex.Message}");
             }
         }
 
-        /// <summary>关闭系统代理。</summary>
+        /// <summary>Shut down the system agent.</summary>
         public static void ClearProxy()
         {
             try
@@ -60,13 +60,13 @@ namespace XrayUI.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[SystemProxy] ClearProxy 失败: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[SystemProxy] ClearProxy failed: {ex.Message}");
             }
         }
 
         // ── Helpers ───────────────────────────────────────────────────────────
 
-        /// <summary>通知 Windows 代理设置已变更，立即生效。</summary>
+        /// <summary>Notify Windows that the proxy settings have been changed, effective immediately.</summary>
         private static void NotifyWindows()
         {
             InternetSetOption(IntPtr.Zero, INTERNET_OPTION_SETTINGS_CHANGED, IntPtr.Zero, 0);

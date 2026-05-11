@@ -3,7 +3,7 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
-    <RootNamespace>XrayUI</RootNamespace>
+	<RootNamespace>LinqqXrayVPN</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Platforms>x86;x64;ARM64</Platforms>
     <RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
@@ -28,11 +28,15 @@
   <!-- The standalone Updater lives in a sibling project; exclude it from the main app's
        default file globs so we don't double-include its sources / Program.cs entry point. -->
   <ItemGroup>
+    <Compile Remove="Strings\en-US\**" />
     <Compile Remove="XrayUI.Updater\**" />
     <Content Remove="XrayUI.Updater\**" />
+    <None Remove="Strings\en-US\**" />
     <None Remove="XrayUI.Updater\**" />
+    <Page Remove="Strings\en-US\**" />
     <Page Remove="XrayUI.Updater\**" />
     <ApplicationDefinition Remove="XrayUI.Updater\**" />
+    <EmbeddedResource Remove="Strings\en-US\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -117,16 +121,21 @@
        (it publishes the updater explicitly to keep step logs separated).
        Skipped when no RID is set (e.g. plain `dotnet build`) since the
        Exec would otherwise emit a malformed `-r` flag. -->
-  <Target Name="PublishUpdaterAlongside" AfterTargets="Publish"
-          Condition="'$(BuildingForCI)' != 'true' and '$(RuntimeIdentifier)' != ''">
+  <Target Name="PublishUpdaterAlongside" AfterTargets="Publish" Condition="'$(BuildingForCI)' != 'true' and '$(RuntimeIdentifier)' != ''">
     <PropertyGroup>
       <UpdaterStagingDir>$(IntermediateOutputPath)updater-publish\</UpdaterStagingDir>
     </PropertyGroup>
-    <Exec Command="dotnet publish &quot;$(MSBuildThisFileDirectory)XrayUI.Updater\XrayUI.Updater.csproj&quot; -c $(Configuration) -r $(RuntimeIdentifier) -p:SelfContained=true -p:PublishAot=true -p:PublishTrimmed=true -p:PublishSingleFile=false -p:Version=$(Version) -o &quot;$(UpdaterStagingDir)&quot;" 
-          EnvironmentVariables="DOTNET_CLI_UI_LANGUAGE=en" />
-    <Copy SourceFiles="$(UpdaterStagingDir)XrayUI.Updater.exe"
-          DestinationFolder="$(PublishDir)" />
+    <Exec Command="dotnet publish &quot;$(MSBuildThisFileDirectory)XrayUI.Updater\XrayUI.Updater.csproj&quot; -c $(Configuration) -r $(RuntimeIdentifier) -p:SelfContained=true -p:PublishAot=true -p:PublishTrimmed=true -p:PublishSingleFile=false -p:Version=$(Version) -o &quot;$(UpdaterStagingDir)&quot;" EnvironmentVariables="DOTNET_CLI_UI_LANGUAGE=en" />
+    <Copy SourceFiles="$(UpdaterStagingDir)XrayUI.Updater.exe" DestinationFolder="$(PublishDir)" />
     <Message Text="Bundled XrayUI.Updater.exe into $(PublishDir)" Importance="high" />
   </Target>
+  <ItemGroup>
+    <None Update="Strings\en-US.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Strings\ru-RU.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 
 </Project>

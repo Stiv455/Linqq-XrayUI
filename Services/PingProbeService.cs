@@ -3,7 +3,7 @@ using System.Net.NetworkInformation;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace XrayUI.Services
+namespace LinqqXrayVPN.Services
 {
     public sealed class PingProbeService
     {

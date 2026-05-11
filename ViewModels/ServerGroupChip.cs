@@ -1,6 +1,6 @@
-using XrayUI.Models;
+using LinqqXrayVPN.Models;
 
-namespace XrayUI.ViewModels
+namespace LinqqXrayVPN.ViewModels
 {
     public partial class ServerGroupChip : ObservableObject
     {

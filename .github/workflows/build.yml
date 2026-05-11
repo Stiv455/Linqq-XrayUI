@@ -32,7 +32,7 @@ jobs:
       # all properties below apply to both restore and publish phases.
       - name: Publish (win-x64, AOT)
         run: >
-          dotnet publish XrayUI-dev.csproj
+          dotnet publish LinqqXrayVPN.csproj
           -c Release
           -r win-x64
           -p:Platform=x64
@@ -48,7 +48,7 @@ jobs:
         shell: pwsh
         run: |
           $publishDir = "bin/Release/net10.0-windows10.0.19041.0/win-x64/publish"
-          $exe = "$publishDir/XrayUI-dev.exe"
+          $exe = "$publishDir/LinqqXrayVPN.exe"
           Write-Host "Listing $publishDir :"
           if (Test-Path $publishDir) {
             Get-ChildItem -Recurse $publishDir | ForEach-Object { $_.FullName }

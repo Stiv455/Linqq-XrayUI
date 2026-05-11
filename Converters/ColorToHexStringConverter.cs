@@ -2,7 +2,7 @@ using System;
 using Microsoft.UI.Xaml.Data;
 using Windows.UI;
 
-namespace XrayUI.Converters
+namespace LinqqXrayVPN.Converters
 {
     public partial class ColorToHexStringConverter : IValueConverter
     {

@@ -2,14 +2,16 @@
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using XrayUI.Helpers;
-using XrayUI.Models;
-using XrayUI.Services;
+using LinqqXrayVPN.Helpers;
+using LinqqXrayVPN.Models;
+using LinqqXrayVPN.Services;
 
-namespace XrayUI.ViewModels
+namespace LinqqXrayVPN.ViewModels
 {
     public partial class ControlPanelViewModel : ObservableObject
     {
+        public LocalizationService Loc => LocalizationService.Instance;
+
         private readonly IDialogService _dialogs;
         private readonly SettingsService _settings;
         private readonly XrayService _xray;
@@ -19,15 +21,18 @@ namespace XrayUI.ViewModels
         private readonly IUpdateService _update;
         private UpdateInfo? _availableUpdate;
         private bool _isUpdateAvailable;
-        private string _startStopButtonContent = "启动";
+        private string _startStopButtonContent;
         private bool _startStopButtonChecked;
         private bool _isRunning;
         private bool _isTunMode;
         private int _localPort = 16890;
-        private string _routingMode = "智能分流";
+        private string _routingMode;
         private bool _isSystemProxyEnabled = true;
         private bool _isStartupEnabled;
         private bool _isAutoConnect;
+
+
+
         // Guards OnIsTunModeChanged from firing the dialog when we update internally
         private bool _isTunInternalUpdate;
 
@@ -50,7 +55,7 @@ namespace XrayUI.ViewModels
         private bool _isReapplying;
 
         /// <summary>True while ReapplyRoutingAsync is mid-restart. UI uses this to
-        /// disable related menu items and show "正在应用...".</summary>
+        /// disable related menu items and show "Being applied...".</summary>
         public bool IsReapplying
         {
             get => _isReapplying;
@@ -88,6 +93,8 @@ namespace XrayUI.ViewModels
             _tunService     = tunService;
             _startupService = startupService;
             _update         = update;
+            _startStopButtonContent = Loc.GetString("set13.18");
+            _routingMode = Loc.GetString("set13.19");
         }
 
         // ── Running state ─────────────────────────────────────────────────────────────────────────────────────────────
@@ -117,13 +124,13 @@ namespace XrayUI.ViewModels
         }
 
         public string StatusText =>
-            IsReapplying ? "正在应用..." :
+            IsReapplying ? Loc.GetString("set14.1") :
             IsRunning    ? _activeServerName :
-                           "未运行";
-
+                           Loc.GetString("set14.2");
+        
         private void OnIsRunningChanged(bool value)
         {
-            StartStopButtonContent = value ? "停止" : "启动";
+            StartStopButtonContent = value ? Loc.GetString("set14.3") : Loc.GetString("set14.4");
             StartStopButtonChecked = value;
             OnPropertyChanged(nameof(StatusText));
             OnPropertyChanged(nameof(IsModeToggleEnabled));
@@ -209,13 +216,13 @@ namespace XrayUI.ViewModels
             var server = GetSelectedServer();
             if (server is null)
             {
-                await _dialogs.ShowErrorAsync("未选择服务器", "请先从列表中选择服务器");
+                await _dialogs.ShowErrorAsync(Loc.GetString("set14.5"), Loc.GetString("set14.6"));
                 return false;
             }
-
+            
             var appSettings = await _settings.LoadSettingsAsync();
             appSettings.LocalMixedPort = LocalPort;
-            appSettings.RoutingMode    = RoutingMode == "智能分流" ? "smart" : "global";
+            appSettings.RoutingMode    = RoutingMode == Loc.GetString("set14.7") ? "smart" : "global";
             appSettings.IsTunMode      = IsTunMode;
             if (IsAutoConnect)
                 appSettings.LastAutoConnectServerId = server.Id;
@@ -235,7 +242,7 @@ namespace XrayUI.ViewModels
                 if (string.IsNullOrWhiteSpace(tunOutboundInterfaceName))
                 {
                     await _dialogs.ShowErrorAsync("TUN mode error",
-                        "Could not determine the default outbound network interface. Please check that Wi-Fi/Ethernet is connected, then try TUN mode again as administrator.");
+                        Loc.GetString("set14.8"));
                     return false;
                 }
 
@@ -249,9 +256,9 @@ namespace XrayUI.ViewModels
             if (!ok)
             {
                 var detail = string.IsNullOrEmpty(_xray.LastError)
-                    ? "xray 启动失败. 请检查服务器配置."
+                    ? Loc.GetString("set14.9")
                     : _xray.LastError;
-                await _dialogs.ShowErrorAsync("启动失败", detail);
+                await _dialogs.ShowErrorAsync(Loc.GetString("set14.10"), detail);
                 return false;
             }
 
@@ -294,7 +301,7 @@ namespace XrayUI.ViewModels
             _activeServer     = null;
             _activeServerName = string.Empty;
             IsRunning = false;
-            await _dialogs.ShowErrorAsync("启动失败", ex.Message);
+            await _dialogs.ShowErrorAsync(Loc.GetString("set14.10"), ex.Message);
         }
 
         /// <summary>
@@ -323,7 +330,7 @@ namespace XrayUI.ViewModels
                     if (!ok)
                     {
                         var detail = string.IsNullOrEmpty(_xray.LastError)
-                            ? "xray 应用新配置失败，已停止。"
+                            ? Loc.GetString("set14.11")
                             : _xray.LastError;
                         await HandleReapplyFailureAsync(detail);
                     }
@@ -371,7 +378,7 @@ namespace XrayUI.ViewModels
             _activeServerName = string.Empty;
             IsRunning = false;
 
-            await _dialogs.ShowErrorAsync("应用新配置失败", detail);
+            await _dialogs.ShowErrorAsync(Loc.GetString("set14.12"), detail);
         }
 
 
@@ -386,7 +393,7 @@ namespace XrayUI.ViewModels
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[TUN] 清理路由失败: {ex.Message}");
+                Debug.WriteLine($"[TUN] Failed to clean up the route: {ex.Message}");
             }
             finally
             {
@@ -394,7 +401,7 @@ namespace XrayUI.ViewModels
             }
         }
 
-        /// <summary>供 MainWindow.StopBackgroundServicesOnExit 调用，确保退出时清理路由</summary>
+        /// <summary>for MainWindow.StopBackgroundServicesOnExit Call to ensure that the route is cleaned up when exiting</summary>
         private string? ResolveTunServerHostForCleanup()
         {
             if (!string.IsNullOrWhiteSpace(_currentTunServerHost))
@@ -406,7 +413,7 @@ namespace XrayUI.ViewModels
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[TUN] 读取持久化 TUN 服务器主机失败: {ex.Message}");
+                Debug.WriteLine($"[TUN] Failed to read the persistent TUN server host: {ex.Message}");
                 return null;
             }
         }
@@ -450,7 +457,7 @@ namespace XrayUI.ViewModels
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[TUN] 退出时保存 TUN 状态失败: {ex.Message}");
+                Debug.WriteLine($"[TUN] Failed to save the TUN state when exiting: {ex.Message}");
             }
         }
 
@@ -471,7 +478,7 @@ namespace XrayUI.ViewModels
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[TUN] 关机快速清理路由失败: {ex.Message}");
+                Debug.WriteLine($"[TUN] Shutdown to quickly clean up the route failed: {ex.Message}");
             }
             finally
             {
@@ -496,14 +503,14 @@ namespace XrayUI.ViewModels
         public string TunModeText => IsTunMode ? "On" : "Off";
 
         /// <summary>
-        /// 路由模式 / 代理模式的可切换性。
-        /// 运行时切换会自动 reapply；但 TUN 模式运行中禁止改，避免把 TUN 管道搞混。
-        /// Reapply 进行时也禁用，防止重入。
+        /// Switchability of routing mode / proxy mode.
+        /// Switching at runtime will automatically reapply; however, it is forbidden to change during TUN mode operation to avoid confusing the TUN pipeline.
+        /// Reapply is also disabled when in progress to prevent reentrant.
         /// </summary>
         public bool IsModeToggleEnabled => !IsReapplying && !(IsRunning && IsTunMode);
 
-        /// <summary>TUN 开关自身：运行中禁止切换（切 TUN 要重启 xray + 改网络栈）。
-        /// Reapply 进行时也禁用。</summary>
+        /// <summary>TUN switch itself: It is forbidden to switch during operation (to cut TUN, restart xray + change the network stack）。
+        /// Reapply It is also disabled when in progress.</summary>
         public bool IsTunToggleEnabled => !IsRunning && !IsReapplying;
 
         private void OnIsTunModeChanged(bool value)
@@ -515,8 +522,8 @@ namespace XrayUI.ViewModels
         }
 
         /// <summary>
-        /// 处理用户切换 TUN 开关：非管理员时还原开关并弹出确认对话框，
-        /// 用户确认后以管理员身份重启 App。
+        /// Handle user switching TUN switch: Restore the switch when you are not an administrator and a confirmation dialog box pops up，
+        /// After the user confirms, restart the app as an administrator.
         /// </summary>
         private async Task HandleTunToggleAsync(bool wantEnable)
         {
@@ -530,10 +537,10 @@ namespace XrayUI.ViewModels
             _isTunInternalUpdate = false;
 
             var confirmed = await _dialogs.ShowConfirmationAsync(
-                "开启TUN模式",
-                "开启 TUN 模式需要管理员权限，程序将会重启，是否继续？",
-                "确认",
-                "取消");
+                Loc.GetString("set14.13"),
+                Loc.GetString("set14.14"),
+                Loc.GetString("set12.31"),
+                Loc.GetString("set12.32"));
 
             if (!confirmed) return;
 
@@ -583,18 +590,18 @@ namespace XrayUI.ViewModels
             }
             catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223)
             {
-                // 用户点击了 UAC 对话框的"否"
-                Debug.WriteLine("[TUN] 用户取消了管理员授权");
+                // The user clicked "No" in the UAC dialog box
+                Debug.WriteLine("[TUN] The user canceled the administrator authorization");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[TUN] 以管理员身份重启失败: {ex.Message}");
+                Debug.WriteLine($"[TUN] Failed to restart as administrator: {ex.Message}");
             }
         }
 
         /// <summary>
-        /// 静默设置 TUN 开关（不触发权限检查和对话框）。
-        /// 供 App.xaml.cs 在检测到 --tun 参数后调用。
+        /// Set the TUN switch silently (does not trigger permission checks and dialog boxes).
+        /// For App.xaml.cs is called after the--tun parameter is detected.
         /// </summary>
         public void SetTunEnabledSilently(bool value)
         {
@@ -674,7 +681,7 @@ namespace XrayUI.ViewModels
 
             RoutingMode = mode;
             var s = await _settings.LoadSettingsAsync();
-            s.RoutingMode = mode == "智能分流" ? "smart" : "global";
+            s.RoutingMode = mode == Loc.GetString("set14.7") ? "smart" : "global";
             await TrySaveSettingsAsync(s, "persist routing mode");
 
             // Apply live if xray is currently running (UI only allows this when !IsTunMode).
@@ -706,7 +713,7 @@ namespace XrayUI.ViewModels
         [RelayCommand]
         private async Task SetProxyMode(string mode)
         {
-            var want = mode == "全局代理";
+            var want = mode == Loc.GetString("set14.15"); 
 
             // No-op guard: clicking the already-selected radio must not re-hit
             // the registry or re-write settings.
@@ -771,9 +778,10 @@ namespace XrayUI.ViewModels
             }
             catch (Exception ex)
             {
-                await _dialogs.ShowErrorAsync("开机启动设置失败", ex.Message);
+                await _dialogs.ShowErrorAsync(Loc.GetString("set14.16"), ex.Message);
                 return;
             }
+            
 
             s.IsStartupEnabled = newEnabled;
             s.IsAutoConnect    = newAutoConnect;
@@ -819,7 +827,7 @@ namespace XrayUI.ViewModels
         // ── App update notification ───────────────────────────────────────────────
 
         /// <summary>True iff a newer release was found at startup. Drives the gear
-        /// button's yellow dot and the "更新至新版" menu item.</summary>
+        /// button's yellow dot and the "Update to the new version" menu item.</summary>
         public bool IsUpdateAvailable
         {
             get => _isUpdateAvailable;
@@ -834,7 +842,7 @@ namespace XrayUI.ViewModels
         }
 
         public Visibility UpdateBadgeVisibility => _isUpdateAvailable ? Visibility.Visible : Visibility.Collapsed;
-        public string     UpdateMenuText        => $"发现新版本 {_availableUpdate?.NewVersion}";
+        public string     UpdateMenuText        => $"{Loc.GetString("set14.17")} {_availableUpdate?.NewVersion}";
 
         /// <summary>Called from MainViewModel after the background check completes.
         /// Pass null to clear (e.g. after a failed update attempt).</summary>
@@ -857,7 +865,7 @@ namespace XrayUI.ViewModels
             UpdateStaging? staging = null;
             try
             {
-                await _dialogs.ShowProgressBarDialogAsync("正在更新 XrayUI",
+                await _dialogs.ShowProgressBarDialogAsync(Loc.GetString("set14.18"),
                     async (progress, ct) =>
                     {
                         staging = await _update.DownloadVerifyAndExtractAsync(info, proxy, progress, ct);
@@ -870,7 +878,7 @@ namespace XrayUI.ViewModels
             }
             catch (Exception ex)
             {
-                await _dialogs.ShowErrorAsync("更新失败", ex.Message);
+                await _dialogs.ShowErrorAsync(Loc.GetString("set14.19"), ex.Message);
                 return;
             }
 
@@ -885,7 +893,7 @@ namespace XrayUI.ViewModels
             }
             catch (Exception ex)
             {
-                await _dialogs.ShowErrorAsync("更新失败", "无法启动升级器：" + ex.Message);
+                await _dialogs.ShowErrorAsync(Loc.GetString("set14.19"), Loc.GetString("set14.20") + ex.Message);
                 return;
             }
 

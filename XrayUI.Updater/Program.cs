@@ -4,7 +4,7 @@ using System.IO;
 using System.Security.Principal;
 using System.Threading;
 
-namespace XrayUI.Updater;
+namespace LinqqXrayVPN.Updater;
 
 internal static class Program
 {
@@ -45,7 +45,7 @@ internal static class Program
             if (parentPid is null || string.IsNullOrEmpty(extractedDir) ||
                 string.IsNullOrEmpty(installDir) || string.IsNullOrEmpty(launchAfter))
             {
-                Console.Error.WriteLine("Usage: XrayUI.Updater --parent-pid=N --extracted-dir=PATH --install-dir=PATH --launch-after=NAME [--elevated]");
+                Console.Error.WriteLine("Usage: LinqqXrayVPN.Updater --parent-pid=N --extracted-dir=PATH --install-dir=PATH --launch-after=NAME [--elevated]");
                 return 2;
             }
 
@@ -131,7 +131,7 @@ internal static class Program
     {
         try
         {
-            var probe = Path.Combine(installDir, ".xrayui-write-test");
+            var probe = Path.Combine(installDir, ".LinqqXrayVPN-write-test");
             File.WriteAllText(probe, string.Empty);
             File.Delete(probe);
             return true;
@@ -144,7 +144,7 @@ internal static class Program
     {
         var psi = new ProcessStartInfo
         {
-            FileName        = Environment.ProcessPath ?? "XrayUI.Updater.exe",
+            FileName        = Environment.ProcessPath ?? "LinqqXrayVPN.Updater.exe",
             UseShellExecute = true,
             Verb            = "runas",
         };
@@ -275,7 +275,7 @@ internal static class Program
         {
             var logRoot = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "XrayUI", "Updates");
+                "LinqqXrayVPN", "Updates");
             Directory.CreateDirectory(logRoot);
             var path = Path.Combine(logRoot, "updater.log");
             _log = new StreamWriter(new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.Read))

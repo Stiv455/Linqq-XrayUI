@@ -7,21 +7,21 @@ using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
-using XrayUI.Helpers;
+using LinqqXrayVPN.Helpers;
 
-namespace XrayUI.Services;
+namespace LinqqXrayVPN.Services;
 
 /// <summary>
-/// TUN 模式相关服务。
-/// 现在主要负责 wintun.dll 探测和 fallback 路由清理：
-/// xray 启动时用 elevated 权限通过 autoSystemRoutingTable 自己加路由，
-/// 这里只是兜底（xray 异常退出时清掉残留路由）。
+/// TUN Model related services。
+/// Now mainly responsible for wintun.dll Detection and fallback Route cleanup：
+/// xray Used at startup elevated Permission passed autoSystemRoutingTable Add your own route，
+/// This is just the bottom of the pocket (clear the remaining routes when xray exits abnormally)。
 /// </summary>
 public class TunService
 {
     private readonly string _engineDirectory;
 
-    /// <summary>默认 TUN 接口名称（必须与 XrayConfigBuilder.BuildTunInbound 中的 name 字段一致）</summary>
+    /// <summary>Default TUN interface name (must be the same as XrayConfigBuilder.BuildTunInbound The name field in is the same）</summary>
     private const string DefaultTunInterfaceName = "xray-tun";
 
     public TunService()
@@ -29,16 +29,16 @@ public class TunService
         _engineDirectory = Path.Combine(AppContext.BaseDirectory, "Assets", "engine");
     }
 
-    /// <summary>检查 wintun.dll 是否存在</summary>
+    /// <summary>Check wintun.dll Does the dll exist?</summary>
     public bool IsWintunAvailable()
     {
         var wintunPath = Path.Combine(_engineDirectory, "wintun.dll");
         var exists = File.Exists(wintunPath);
-        Debug.WriteLine($"[TunService] wintun.dll 路径: {wintunPath}, 存在: {exists}");
+        Debug.WriteLine($"[TunService] wintun.dll path: {wintunPath}, exist: {exists}");
         return exists;
     }
 
-    /// <summary>获取 wintun.dll 的预期路径（用于错误提示）</summary>
+    /// <summary>Get wintun.dll The expected path of the dll (used for error prompts)</summary>
     public string GetExpectedWintunPath() => Path.Combine(_engineDirectory, "wintun.dll");
 
     /// <summary>
@@ -87,8 +87,8 @@ public class TunService
     }
 
     /// <summary>
-    /// 兜底清理：xray 正常退出会自己删它加的路由；这个方法只在 xray 异常退出
-    /// 或退出后路由仍残留时使用。删除 0.0.0.0/0 的兜底路由 + 服务器直连路由。
+    /// Clean up the bottom of the pocket: xray will delete the route it added by itself when it exits normally; this method only exits when xray exits abnormally.
+    /// Or use it when the route remains after exiting.Delete the bottom route of 0.0.0.0/0 + server direct connection route.
     /// </summary>
     public void CleanupTunRoutes(string? serverAddress)
     {
@@ -110,8 +110,8 @@ public class TunService
                 "route delete 128.0.0.0 mask 128.0.0.0",
             };
 
-            // serverAddress 可能是主机名 (e.g. proxy.example.com)，但 Windows `route delete`
-            // 不解析域名，没法直接处理；非 IPv4 就跳过 server-IP 清理。
+            // serverAddress May be the host name (e.g. proxy.example.com)，但 Windows `route delete`
+            // If the domain name is not resolved, it cannot be processed directly; if it is not IPv4, server-IP cleanup is skipped.
             if (TryParseSafeIPv4Address(serverAddress, out var serverIPv4))
             {
                 batch.Add($"netsh interface ipv4 delete route {serverIPv4}/32 \"{DefaultTunInterfaceName}\" store=active");
@@ -122,11 +122,11 @@ public class TunService
                 batch.Add($"route delete {dns} mask 255.255.255.255");
 
             RunElevatedBatch(batch);
-            Debug.WriteLine("[TunService] TUN 路由兜底清理完成");
+            Debug.WriteLine("[TunService] TUN The bottom of the routing pocket is cleaned up");
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[TunService] 清理 TUN 路由失败: {ex.Message}");
+            Debug.WriteLine($"[TunService] Failed to clean up the TUN route: {ex.Message}");
         }
     }
 
@@ -231,17 +231,17 @@ public class TunService
             process.WaitForExit(5000);
             // Exit code reflects only the LAST command in the chain — best-effort cleanup,
             // not an authoritative "all succeeded" signal.
-            Debug.WriteLine($"[TunService] cleanup 批处理退出代码: {process.ExitCode}");
+            Debug.WriteLine($"[TunService] cleanup Batch exit code: {process.ExitCode}");
             return true;
         }
         catch (Win32Exception ex) when (ex.NativeErrorCode == 1223)
         {
-            Debug.WriteLine("[TunService] 管理员授权被取消");
+            Debug.WriteLine("[TunService] Administrator authorization is cancelled");
             return false;
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[TunService] cleanup 批处理执行失败: {ex.Message}");
+            Debug.WriteLine($"[TunService] cleanup Batch execution failed: {ex.Message}");
             return false;
         }
     }
