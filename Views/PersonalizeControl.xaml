@@ -437,23 +437,6 @@
                         <Rectangle Height="1"
                                Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
 
-                        <ComboBox 
-                            Header="语言 / Language"
-                            ItemsSource="{x:Bind ViewModel.SupportedLanguages, Mode=OneWay}"
-                            SelectedIndex="{x:Bind ViewModel.SelectedLanguageIndex, Mode=TwoWay}"
-                            HorizontalAlignment="Stretch"
-                            Margin="0,12,0,0">
-
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate x:DataType="local:LanguageOption">
-                                    <TextBlock Text="{x:Bind DisplayName}" />
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
-
-                        <Rectangle Height="1"
-                               Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
-
                         <!-- Unlock Display -->
                         <CheckBox IsChecked="{x:Bind ViewModel.ShowUnlockInDetails, Mode=TwoWay}"
                               HorizontalAlignment="Stretch"
