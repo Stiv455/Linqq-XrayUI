@@ -33,3 +33,6 @@ dotnet build -c Release
 
 # Publish for your architecture
 dotnet publish -c Release -r win-x64 --self-contained false
+
+# Publish for Windows 10-11 x64
+dotnet publish -c Release -r win-x64 -p:Platform=x64 --self-contained=false
