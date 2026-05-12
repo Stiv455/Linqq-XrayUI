@@ -433,7 +433,7 @@
                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                             </StackPanel>
                         </CheckBox>
-
+         
                         <Rectangle Height="1"
                                Fill="{ThemeResource DividerStrokeColorDefaultBrush}" />
 

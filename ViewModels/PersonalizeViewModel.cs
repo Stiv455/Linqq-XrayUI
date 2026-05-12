@@ -168,9 +168,11 @@ namespace LinqqXrayVPN.ViewModels
             new PresetExportService(_settings).ExportAsync();
 
         [RelayCommand]
-        private async Task Done()
+        public async Task Done()
         {
             var s = await _settings.LoadSettingsAsync();
+
+            string oldLanguage = s.Language ?? "en-US";
 
             ProtocolColorStore.SaveTo(s);
             s.ThemeSetting = ThemeHelper.CurrentTheme switch
@@ -181,15 +183,19 @@ namespace LinqqXrayVPN.ViewModels
             };
             s.BackdropSetting = ThemeHelper.CurrentBackdrop;
             s.ShowLatencyInDetails = ShowLatencyInDetails;
-
             s.ShowUnlockInDetails = ShowUnlockInDetails;
+
             if (_selectedLanguageIndex >= 0 && _selectedLanguageIndex < SupportedLanguages.Count)
             {
                 s.Language = SupportedLanguages[_selectedLanguageIndex].Code;
             }
 
             await _settings.SaveSettingsAsync(s);
-            await ShowRestartDialogAsync();
+            bool languageChanged = !string.Equals(oldLanguage, s.Language, StringComparison.OrdinalIgnoreCase);
+            if (languageChanged)
+            {
+                await ShowRestartDialogAsync();
+            }
 
             CloseRequested?.Invoke(this, EventArgs.Empty);
         }
@@ -198,6 +204,7 @@ namespace LinqqXrayVPN.ViewModels
 
         public void LoadFromStore()
         {
+            var s = _settings.LoadSettingsAsync().Result;
             _ssColor        = ProtocolColorStore.Ss;
             _vlessColor     = ProtocolColorStore.Vless;
             _vmessColor     = ProtocolColorStore.Vmess;
@@ -241,21 +248,7 @@ namespace LinqqXrayVPN.ViewModels
                 if (SetProperty(ref _selectedLanguageIndex, value))
                 {
                     var newLang = SupportedLanguages[value].Code;
-                    _ = SaveLanguageAsync(newLang);
                 }
-            }
-        }
-        private async Task SaveLanguageAsync(string langCode)
-        {
-            try
-            {
-                var s = await _settings.LoadSettingsAsync();
-                s.Language = langCode;
-                await _settings.SaveSettingsAsync(s);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Failed to save language: {ex}");
             }
         }
         private async Task ShowRestartDialogAsync()

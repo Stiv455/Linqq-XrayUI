@@ -1,10 +1,15 @@
-﻿using System;
-using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
-using LinqqXrayVPN.Helpers;
+﻿using LinqqXrayVPN.Helpers;
 using LinqqXrayVPN.Models;
 using LinqqXrayVPN.Services;
+using Microsoft.UI.Text;
+using Microsoft.UI.Xaml.Media;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace LinqqXrayVPN.ViewModels
 {
@@ -30,8 +35,23 @@ namespace LinqqXrayVPN.ViewModels
         private bool _isSystemProxyEnabled = true;
         private bool _isStartupEnabled;
         private bool _isAutoConnect;
+        public XamlRoot? CurrentXamlRoot { get; set; }
+        private string _tunOutboundInterface = "auto";
 
+        public string TunOutboundInterface
+        {
+            get => _tunOutboundInterface;
+            set => SetProperty(ref _tunOutboundInterface, value);
+        }
 
+        public ObservableCollection<string> AvailableInterfaces { get; } = new();
+
+        private string _dnsServersText = string.Empty;
+        public string DnsServersText
+        {
+            get => _dnsServersText;
+            set => SetProperty(ref _dnsServersText, value);
+        }
 
         // Guards OnIsTunModeChanged from firing the dialog when we update internally
         private bool _isTunInternalUpdate;
@@ -907,5 +927,185 @@ namespace LinqqXrayVPN.ViewModels
                 Environment.Exit(0);
             }
         }
+
+        public void LoadConnectionSettings()
+        {
+            var s = _settings.LoadSettingsAsync().Result;
+
+            DnsServersText = string.Join(", ", s.DnsServers ?? new List<string> { "1.1.1.1", "8.8.8.8" });
+            TunOutboundInterface = s.TunOutboundInterface ?? "auto";
+
+            LoadInterfaces();
+        }
+
+        private void LoadInterfaces()
+        {
+            AvailableInterfaces.Clear();
+            AvailableInterfaces.Add("auto");
+
+            try
+            {
+                foreach (var nic in System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces())
+                {
+                    if (nic.OperationalStatus == System.Net.NetworkInformation.OperationalStatus.Up &&
+                        nic.NetworkInterfaceType != System.Net.NetworkInformation.NetworkInterfaceType.Loopback)
+                    {
+                        AvailableInterfaces.Add(nic.Name);
+                    }
+                }
+            }
+            catch { }
+        }
+        [RelayCommand]
+        private void DetectActiveInterface()
+        {
+            try
+            {
+                var activeInterface = GetActiveOutboundInterfaceName();
+                if (!string.IsNullOrEmpty(activeInterface) && AvailableInterfaces.Contains(activeInterface))
+                {
+                    TunOutboundInterface = activeInterface;
+                }
+                else
+                {
+                    TunOutboundInterface = "auto";
+                }
+            }
+            catch
+            {
+                TunOutboundInterface = "auto";
+            }
+        }
+
+        private string? GetActiveOutboundInterfaceName()
+        {
+            try
+            {
+                var interfaces = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces();
+
+                foreach (var nic in interfaces)
+                {
+                    if (nic.OperationalStatus != System.Net.NetworkInformation.OperationalStatus.Up)
+                        continue;
+
+                    var props = nic.GetIPProperties();
+                    if (props.GatewayAddresses.Any(g =>
+                        g.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork))
+                    {
+                        return nic.Name;
+                    }
+                }
+            }
+            catch { }
+
+            return null;
+        }
+        [RelayCommand]
+        private async Task SaveConnectionSettingsAsync()
+        {
+            try
+            {
+                var s = await _settings.LoadSettingsAsync();
+
+                s.DnsServers = DnsServersText
+                    .Split([','], StringSplitOptions.RemoveEmptyEntries)
+                    .Select(x => x.Trim())
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .ToList();
+
+                s.TunOutboundInterface = string.IsNullOrWhiteSpace(TunOutboundInterface)
+                    ? "auto"
+                    : TunOutboundInterface;
+
+                await _settings.SaveSettingsAsync(s);
+
+                Debug.WriteLine($"[SaveConnection] DNS = {DnsServersText} | Interface = {TunOutboundInterface}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.ToString());
+            }
+        }
+
+        [RelayCommand]
+        private async Task OpenConnectionSettingsAsync()
+        {
+            LoadConnectionSettings();
+
+            if (CurrentXamlRoot == null) return;
+
+            var dialog = new ContentDialog
+            {
+                XamlRoot = CurrentXamlRoot,
+                Title = Loc.GetString("set18.1"),              
+                PrimaryButtonText = Loc.GetString("set12.26"), 
+                CloseButtonText = Loc.GetString("set12.27"),
+                DefaultButton = ContentDialogButton.Primary
+            };
+            
+            var panel = new StackPanel { Spacing = 20, Padding = new Thickness(0, 8, 0, 8) };
+
+            var dnsPanel = new StackPanel { Spacing = 6 };
+            dnsPanel.Children.Add(new TextBlock { Text = Loc.GetString("set18.2"), FontWeight = FontWeights.SemiBold, FontSize = 16 });
+            dnsPanel.Children.Add(new TextBlock { Text = Loc.GetString("set18.3"), FontSize = 13, Foreground = (SolidColorBrush)Application.Current.Resources["TextFillColorSecondaryBrush"] });
+
+            var dnsTextBox = new TextBox
+            {
+                Text = DnsServersText,
+                PlaceholderText = Loc.GetString("set18.3"),
+                Width = 420
+            };
+            dnsPanel.Children.Add(dnsTextBox);
+            panel.Children.Add(dnsPanel);
+
+            var interfacePanel = new StackPanel { Spacing = 6 };
+            interfacePanel.Children.Add(new TextBlock { Text = Loc.GetString("set18.4"), FontWeight = FontWeights.SemiBold, FontSize = 16 });
+            interfacePanel.Children.Add(new TextBlock { Text = Loc.GetString("set18.5"), FontSize = 13, Foreground = (SolidColorBrush)Application.Current.Resources["TextFillColorSecondaryBrush"], TextWrapping = TextWrapping.Wrap });
+
+            var grid = new Grid();
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var interfaceCombo = new ComboBox
+            {
+                ItemsSource = AvailableInterfaces,
+                SelectedItem = TunOutboundInterface,
+                Width = 300,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            Grid.SetColumn(interfaceCombo, 0);
+            grid.Children.Add(interfaceCombo);
+
+            var detectBtn = new Button
+            {
+                Content = Loc.GetString("set18.6"),
+                Padding = new Thickness(16, 6, 16, 6),
+                Margin = new Thickness(8, 0, 0, 0),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            Grid.SetColumn(detectBtn, 1);
+            detectBtn.Click += (s, e) =>
+            {
+                DetectActiveInterface();
+                interfaceCombo.SelectedItem = TunOutboundInterface;
+            };
+            grid.Children.Add(detectBtn);
+
+            interfacePanel.Children.Add(grid);
+            panel.Children.Add(interfacePanel);
+
+            dialog.Content = panel;
+
+            var result = await dialog.ShowAsync();
+
+            if (result == ContentDialogResult.Primary)
+            {
+                DnsServersText = dnsTextBox.Text ?? string.Empty;
+                TunOutboundInterface = interfaceCombo.SelectedItem?.ToString() ?? "auto";
+
+                await SaveConnectionSettingsAsync();
+            }
+        }
+
     }
 }

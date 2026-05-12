@@ -48,44 +48,94 @@
                     <Button.Flyout>
                         <MenuFlyout>
                             <MenuFlyoutItem Text="{x:Bind ViewModel.UpdateMenuText, Mode=OneWay}"
-                                            Command="{x:Bind ViewModel.UpdateAppCommand}"
-                                            Visibility="{x:Bind ViewModel.UpdateBadgeVisibility, Mode=OneWay}" />
+                                        Command="{x:Bind ViewModel.UpdateAppCommand}"
+                                        Visibility="{x:Bind ViewModel.UpdateBadgeVisibility, Mode=OneWay}">
+                                <MenuFlyoutItem.Icon>
+                                    <FontIcon Glyph="&#xE896;" />
+                                </MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                            
                             <MenuFlyoutSeparator Visibility="{x:Bind ViewModel.UpdateBadgeVisibility, Mode=OneWay}" />
+
                             <MenuFlyoutItem Text="{x:Bind Loc.GetString('set3.1'), Mode=OneWay}"
-                                            Command="{x:Bind ViewModel.EditLocalPortCommand}" />
-                            <MenuFlyoutItem Text="{x:Bind Loc.GetString('set3.2'), Mode=OneWay}" 
-                                            Command="{x:Bind ViewModel.ShowLogsCommand}" />
+                                        Command="{x:Bind ViewModel.EditLocalPortCommand}">
+                                <MenuFlyoutItem.Icon>
+                                    <FontIcon Glyph="&#xE70F;" />
+                                </MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+
+                            <MenuFlyoutItem Text="{x:Bind Loc.GetString('set3.2'), Mode=OneWay}"
+                                        Command="{x:Bind ViewModel.ShowLogsCommand}">
+                                <MenuFlyoutItem.Icon>
+                                    <FontIcon Glyph="&#xE7C8;" />
+                                </MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+
                             <MenuFlyoutSubItem Text="{x:Bind Loc.GetString('set3.3'), Mode=OneWay}">
+                                <MenuFlyoutSubItem.Icon>
+                                    <FontIcon Glyph="&#xE81E;" />
+                                </MenuFlyoutSubItem.Icon>
+
                                 <RadioMenuFlyoutItem Text="{x:Bind Loc.GetString('set3.4'), Mode=OneWay}"
-                                                     GroupName="ProxyModeGroup"
-                                                     IsChecked="{x:Bind ViewModel.IsGlobalProxyChecked, Mode=OneWay}"
-                                                     IsEnabled="{x:Bind ViewModel.IsModeToggleEnabled, Mode=OneWay}"
-                                                     Command="{x:Bind ViewModel.SetProxyModeCommand}"
-                                                     CommandParameter="{x:Bind Loc.GetString('set3.4'), Mode=OneWay}" />
+                                    GroupName="ProxyModeGroup"
+                                    IsChecked="{x:Bind ViewModel.IsGlobalProxyChecked, Mode=OneWay}"
+                                    IsEnabled="{x:Bind ViewModel.IsModeToggleEnabled, Mode=OneWay}"
+                                    Command="{x:Bind ViewModel.SetProxyModeCommand}"
+                                    CommandParameter="{x:Bind Loc.GetString('set3.4'), Mode=OneWay}" />
                                 <RadioMenuFlyoutItem Text="{x:Bind Loc.GetString('set3.5'), Mode=OneWay}"
-                                                     GroupName="ProxyModeGroup"
-                                                     IsChecked="{x:Bind ViewModel.IsNoTakeoverChecked, Mode=OneWay}"
-                                                     IsEnabled="{x:Bind ViewModel.IsModeToggleEnabled, Mode=OneWay}"
-                                                     Command="{x:Bind ViewModel.SetProxyModeCommand}"
-                                                     CommandParameter="{x:Bind Loc.GetString('set3.5'), Mode=OneWay}" />
+                                    GroupName="ProxyModeGroup"
+                                    IsChecked="{x:Bind ViewModel.IsNoTakeoverChecked, Mode=OneWay}"
+                                    IsEnabled="{x:Bind ViewModel.IsModeToggleEnabled, Mode=OneWay}"
+                                    Command="{x:Bind ViewModel.SetProxyModeCommand}"
+                                    CommandParameter="{x:Bind Loc.GetString('set3.5'), Mode=OneWay}" />
                             </MenuFlyoutSubItem>
+                            
                             <MenuFlyoutSeparator/>
+
                             <MenuFlyoutItem Text="{x:Bind Loc.GetString('set3.6'), Mode=OneWay}"
-                                            Command="{x:Bind ViewModel.OpenStartupSettingsCommand}"
-                                            Icon="{x:Bind ViewModel.StartupMenuIcon, Mode=OneWay}" />
-                            <MenuFlyoutSubItem Text="{x:Bind Loc.GetString('set3.7'), Mode=OneWay}" >
+                                        Command="{x:Bind ViewModel.OpenStartupSettingsCommand}">
+                                <MenuFlyoutItem.Icon>
+                                    <FontIcon Glyph="&#xE7E8;" />
+                                </MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                            
+                            <MenuFlyoutItem 
+                                        Text="{x:Bind Loc.GetString('set18.1'), Mode=OneWay}"
+                                        Command="{x:Bind ViewModel.OpenConnectionSettingsCommand}">
+                                <MenuFlyoutItem.Icon>
+                                    <FontIcon Glyph="&#xE8A7;" />
+                                </MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+
+
+                            <MenuFlyoutSubItem Text="{x:Bind Loc.GetString('set3.7'), Mode=OneWay}">
+                                <MenuFlyoutSubItem.Icon>
+                                    <FontIcon Glyph="&#xE8D5;" />
+                                </MenuFlyoutSubItem.Icon>
                                 <MenuFlyoutItem Text="{x:Bind Loc.GetString('set3.8'), Mode=OneWay}"
-                                                IsEnabled="{x:Bind ViewModel.IsModeToggleEnabled, Mode=OneWay}"
-                                                Command="{x:Bind ViewModel.SetRoutingModeCommand}"
-                                                CommandParameter="{x:Bind Loc.GetString('set3.8'), Mode=OneWay}" />
+                                            IsEnabled="{x:Bind ViewModel.IsModeToggleEnabled, Mode=OneWay}"
+                                            Command="{x:Bind ViewModel.SetRoutingModeCommand}"
+                                            CommandParameter="{x:Bind Loc.GetString('set3.8'), Mode=OneWay}">
+                                    <MenuFlyoutItem.Icon>
+                                        <FontIcon Glyph="&#xE8A7;" />
+                                    </MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
                                 <MenuFlyoutItem Text="{x:Bind Loc.GetString('set3.9'), Mode=OneWay}"
-                                                IsEnabled="{x:Bind ViewModel.IsModeToggleEnabled, Mode=OneWay}"
-                                                Command="{x:Bind ViewModel.SetRoutingModeCommand}"
-                                                CommandParameter="{x:Bind Loc.GetString('set3.9'), Mode=OneWay}" />
+                                            IsEnabled="{x:Bind ViewModel.IsModeToggleEnabled, Mode=OneWay}"
+                                            Command="{x:Bind ViewModel.SetRoutingModeCommand}"
+                                            CommandParameter="{x:Bind Loc.GetString('set3.9'), Mode=OneWay}">
+                                    <MenuFlyoutItem.Icon>
+                                        <FontIcon Glyph="&#xE8B7;" />
+                                    </MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
                                 <MenuFlyoutSeparator/>
                                 <MenuFlyoutItem Text="{x:Bind Loc.GetString('set3.10'), Mode=OneWay}"
-                                                IsEnabled="{x:Bind ViewModel.IsModeToggleEnabled, Mode=OneWay}"
-                                                Command="{x:Bind ViewModel.ShowCustomRulesCommand}" />
+                                            IsEnabled="{x:Bind ViewModel.IsModeToggleEnabled, Mode=OneWay}"
+                                            Command="{x:Bind ViewModel.ShowCustomRulesCommand}">
+                                    <MenuFlyoutItem.Icon>
+                                        <FontIcon Glyph="&#xE71D;" />
+                                    </MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
                             </MenuFlyoutSubItem>
                         </MenuFlyout>
                     </Button.Flyout>

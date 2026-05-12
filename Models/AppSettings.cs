@@ -42,5 +42,13 @@ namespace LinqqXrayVPN.Models
         /// <summary>Persisted subscription sources. Nodes derived from these carry SubscriptionId = the entry's Id.</summary>
         public List<SubscriptionEntry>? Subscriptions { get; set; }
         public string? Language { get; set; }
+
+        public string? TunOutboundInterface { get; set; } = "auto";
+        public List<string> DnsServers { get; set; } = new List<string>
+            {
+                "8.8.8.8",
+                "1.1.1.1",
+                "localhost"
+            };
     }
 }

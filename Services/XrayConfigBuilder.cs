@@ -1,8 +1,9 @@
-﻿using System;
+﻿using LinqqXrayVPN.Models;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using LinqqXrayVPN.Models;
 
 namespace LinqqXrayVPN.Services
 {
@@ -54,7 +55,7 @@ namespace LinqqXrayVPN.Services
 
             if (settings.IsTunMode)
             {
-                AddNode(list, BuildTunInbound());
+                AddNode(list, BuildTunInbound(settings));
             }
 
             AddNode(list, new JsonObject
@@ -73,7 +74,7 @@ namespace LinqqXrayVPN.Services
             return list;
         }
 
-        private static JsonObject BuildTunInbound()
+        private static JsonObject BuildTunInbound(AppSettings settings)
         {
             return new JsonObject
             {
@@ -82,10 +83,12 @@ namespace LinqqXrayVPN.Services
                 ["settings"] = new JsonObject
                 {
                     ["name"] = "xray-tun",
-                    ["MTU"] = 9000,
+                    ["MTU"] = 1400,
                     ["gateway"] = CreateStringArray("172.18.0.1/30"),
+                    ["autoSystemRoutingTable"] = true,
+                    ["strictRoute"] = true,
                     ["autoSystemRoutingTable"] = CreateStringArray("0.0.0.0/0"),
-                    ["autoOutboundsInterface"] = "auto"
+                    ["autoOutboundsInterface"] = settings.TunOutboundInterface ?? "auto"
                 },
                 ["sniffing"] = new JsonObject
                 {
@@ -524,15 +527,14 @@ namespace LinqqXrayVPN.Services
 
         private static JsonObject BuildDns(AppSettings settings)
         {
-            return settings.IsTunMode
-                ? new JsonObject
-                {
-                    ["servers"] = CreateStringArray("223.5.5.5", "119.29.29.29", "localhost")
-                }
-                : new JsonObject
-                {
-                    ["servers"] = CreateStringArray("8.8.8.8", "114.114.114.114", "localhost")
-                };
+            var dnsList = settings.DnsServers?.Count > 0
+                ? settings.DnsServers
+                : new List<string> { "8.8.8.8", "1.1.1.1", "localhost" };
+
+            return new JsonObject
+            {
+                ["servers"] = CreateStringArray(dnsList.ToArray())
+            };
         }
 
         private static JsonArray CreateStringArray(params string[] values)

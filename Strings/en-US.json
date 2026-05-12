@@ -265,5 +265,11 @@
   "set17.27": "A restart is required to apply the language change.",
   "set17.28": "Restart Now",
   "set17.29": "Later",
-  "set17.30": "No data available"
+  "set17.30": "No data available",
+  "set18.1": "Connection Settings",
+  "set18.2": "DNS Servers",
+  "set18.3": "Example: 1.1.1.1, 8.8.8.8, 9.9.9.9",
+  "set18.4": "Outbound Interface",
+  "set18.5": "Used only when TUN mode is enabled",
+  "set18.6": "Auto Detect"
 }

@@ -14,6 +14,12 @@ namespace LinqqXrayVPN.Views
         public ControlPanelControl()
         {
             this.InitializeComponent();
+
+            Loaded += (s, e) =>
+            {
+                if (ViewModel != null)
+                    ViewModel.CurrentXamlRoot = this.XamlRoot;
+            };
         }
 
         // Called by MainWindow after ViewModel is assigned (via x:Bind the property is set before Loaded)
