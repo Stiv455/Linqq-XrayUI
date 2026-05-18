@@ -106,7 +106,7 @@
 
   <!-- Version: defaults for local builds; CI overrides via -p:Version=<tag> -->
   <PropertyGroup>
-    <Version Condition="'$(Version)' == ''">1.2</Version>
+    <Version Condition="'$(Version)' == ''">1.3</Version>
   </PropertyGroup>
 
   <ItemGroup>
