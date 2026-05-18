@@ -45,17 +45,38 @@ public class TunService
     /// Finds the physical interface Windows would use for normal outbound IPv4 traffic.
     /// TUN mode binds xray outbounds to this interface to avoid sending xray's own
     /// proxy connection back into the TUN adapter.
+    /// 
+    /// <param name="preferIPv6">Try to define an IPv6 interface first</param>
     /// </summary>
-    public string? DetectDefaultOutboundInterfaceName()
+    public string? DetectDefaultOutboundInterfaceName(bool preferIPv6 = true)
     {
         try
         {
-            var localAddress = GetDefaultOutboundAddress();
+            IPAddress? localAddress = null;
+
+            // IPv6
+            if (preferIPv6)
+            {
+                localAddress = GetDefaultOutboundAddress(useIPv6: true);
+                if (localAddress is null)
+                {
+                    Debug.WriteLine("[TunService] IPv6 outbound address not available, falling back to IPv4.");
+                }
+            }
+
+            // Fallback IPv4
             if (localAddress is null)
             {
-                Debug.WriteLine("[TunService] Could not determine the default outbound IPv4 address.");
+                localAddress = GetDefaultOutboundAddress(useIPv6: false);
+            }
+
+            if (localAddress is null)
+            {
+                Debug.WriteLine("[TunService] Could not determine default outbound address (both IPv4 and IPv6 failed).");
                 return null;
             }
+
+            var targetFamily = localAddress.AddressFamily;
 
             var match = NetworkInterface.GetAllNetworkInterfaces()
                 .Where(IsCandidateOutboundInterface)
@@ -64,9 +85,9 @@ public class TunService
                     Interface = nic,
                     Properties = nic.GetIPProperties()
                 })
-                .Where(item => item.Properties.UnicastAddresses.Any(address =>
-                    address.Address.AddressFamily == AddressFamily.InterNetwork
-                    && address.Address.Equals(localAddress)))
+                .Where(item => item.Properties.UnicastAddresses.Any(addr =>
+                    addr.Address.AddressFamily == targetFamily &&
+                    addr.Address.Equals(localAddress)))
                 .Select(item => item.Interface)
                 .FirstOrDefault();
 
@@ -146,11 +167,27 @@ public class TunService
         return true;
     }
 
-    private static IPAddress? GetDefaultOutboundAddress()
+    private static IPAddress? GetDefaultOutboundAddress(bool useIPv6 = false)
     {
-        using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-        socket.Connect("8.8.8.8", 53);
-        return (socket.LocalEndPoint as IPEndPoint)?.Address;
+        try
+        {
+            using var socket = new Socket(
+                useIPv6 ? AddressFamily.InterNetworkV6 : AddressFamily.InterNetwork,
+                SocketType.Dgram,
+                ProtocolType.Udp);
+
+            // Google Public DNS
+            var testEndpoint = useIPv6
+                ? new IPEndPoint(IPAddress.Parse("2001:4860:4860::8888"), 53)
+                : new IPEndPoint(IPAddress.Parse("8.8.8.8"), 53);
+
+            socket.Connect(testEndpoint);
+            return (socket.LocalEndPoint as IPEndPoint)?.Address;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private bool IsCandidateOutboundInterface(NetworkInterface nic)

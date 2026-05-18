@@ -247,7 +247,7 @@ namespace LinqqXrayVPN.ViewModels
             if (IsAutoConnect)
                 appSettings.LastAutoConnectServerId = server.Id;
 
-            string? tunOutboundInterfaceName = null;
+            string? tunOutboundInterfaceName = _tunService.DetectDefaultOutboundInterfaceName(preferIPv6: true);
             if (IsTunMode)
             {
                 // Pre-check: wintun.dll must be present so xray can create the TUN adapter.

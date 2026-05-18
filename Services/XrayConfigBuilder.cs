@@ -83,11 +83,11 @@ namespace LinqqXrayVPN.Services
                 ["settings"] = new JsonObject
                 {
                     ["name"] = "xray-tun",
-                    ["MTU"] = 1400,
-                    ["gateway"] = CreateStringArray("172.18.0.1/30"),
-                    ["autoSystemRoutingTable"] = true,
+                    ["MTU"] = 1280,
+                    // IPv4 + IPv6
+                    ["gateway"] = CreateStringArray("172.18.0.1/30", "fdfe:dcba:9876::1/64"),
                     ["strictRoute"] = true,
-                    ["autoSystemRoutingTable"] = CreateStringArray("0.0.0.0/0"),
+                    ["autoSystemRoutingTable"] = CreateStringArray("0.0.0.0/0", "::/0"),
                     ["autoOutboundsInterface"] = settings.TunOutboundInterface ?? "auto"
                 },
                 ["sniffing"] = new JsonObject
