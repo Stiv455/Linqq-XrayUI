@@ -1,8 +1,8 @@
 <Solution>
   <Configurations>
-    <Platform Name="ARM64" />
     <Platform Name="x64" />
     <Platform Name="x86" />
+    <Platform Name="ARM64" />
   </Configurations>
   <Project Path="LinqqXrayVPN.csproj">
     <Platform Solution="*|ARM64" Project="ARM64" />

@@ -6,7 +6,8 @@
     <AssemblyName>XrayUI.Updater</AssemblyName>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <PublishAot>true</PublishAot>
+    <PublishAot Condition="'$(SelfContained)' == 'true'">true</PublishAot>
+    <PublishTrimmed Condition="'$(SelfContained)' != 'true'">false</PublishTrimmed>
     <InvariantGlobalization>true</InvariantGlobalization>
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
