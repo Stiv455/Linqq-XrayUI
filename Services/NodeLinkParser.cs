@@ -221,7 +221,7 @@ namespace LinqqXrayVPN.Services
 
                 var query = ParseQuery(uri.Query);
 
-                var network  = Q(query, "type",     "tcp") ?? "tcp";
+                var network  = XhttpSettings.NormalizeNetwork(Q(query, "type", "tcp") ?? "tcp");
                 var security = Q(query, "security", "none") ?? "none";
                 var sni      = Q(query, "sni") ?? Q(query, "servername") ?? string.Empty;
                 var fp       = Q(query, "fp",   string.Empty) ?? string.Empty;
@@ -237,6 +237,14 @@ namespace LinqqXrayVPN.Services
                     Q(query, "echForceQuery") ?? Q(query, "echfq"));
                 var finalmask = FinalmaskJson.NormalizeForStorage(Q(query, "fm"));
                 var allowInsecure = IsTruthy(Q(query, "allowInsecure")) || IsTruthy(Q(query, "insecure"));
+
+                var xhttpMode  = string.Empty;
+                var xhttpExtra = string.Empty;
+                if (string.Equals(network, "xhttp", StringComparison.OrdinalIgnoreCase))
+                {
+                    xhttpMode  = XhttpSettings.NormalizeMode(Q(query, "mode"));
+                    xhttpExtra = FinalmaskJson.NormalizeForStorage(Q(query, "extra"));
+                }
 
                 return new ServerEntry
                 {
@@ -257,6 +265,8 @@ namespace LinqqXrayVPN.Services
                     SpiderX     = spx,
                     Path        = path,
                     WsHost      = wsHost,
+                    XhttpMode   = xhttpMode,
+                    XhttpExtra  = xhttpExtra,
                     Flow        = flow,
                     VlessEncryption = vlessEncryption == "none" ? string.Empty : vlessEncryption,
                     Finalmask   = finalmask,

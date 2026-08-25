@@ -174,5 +174,28 @@ namespace LinqqXrayVPN.Views
                 Icon = new FontIcon { Glyph = glyph }
             };
         }
+
+        private void TestModeConnectItem_Click(object sender, RoutedEventArgs e)
+            => ViewModel.LatencyTestMode = "connect";
+
+        private void TestModeRealItem_Click(object sender, RoutedEventArgs e)
+            => ViewModel.LatencyTestMode = "real";
+
+        public static Visibility ConnectModeIconVisibility(string mode)
+            => mode == "real" ? Visibility.Collapsed : Visibility.Visible;
+
+        public static Visibility RealModeIconVisibility(string mode)
+            => mode == "real" ? Visibility.Visible : Visibility.Collapsed;
+
+        public static Brush LatencyForeground(int? milliseconds)
+        {
+            var key = milliseconds switch
+            {
+                < 0 => "LatencyFailBrush",
+                < 200 => "LatencyGoodBrush",
+                _ => "LatencyHighBrush",
+            };
+            return (Brush)Application.Current.Resources[key];
+        }
     }
 }

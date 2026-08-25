@@ -100,7 +100,7 @@ namespace LinqqXrayVPN.Services
 
         private static JsonArray BuildOutbounds(ServerEntry server, AppSettings settings, string? tunOutboundInterfaceName)
         {
-            var proxy = BuildProxyOutbound(server);
+            var proxy = BuildProxyOutbound(server, "proxy");
 
             var direct = new JsonObject
             {
@@ -161,9 +161,71 @@ namespace LinqqXrayVPN.Services
             sockopt["interface"] = interfaceName;
         }
 
-        private static JsonObject BuildProxyOutbound(ServerEntry server)
+        public static string BuildSpeedtestConfig(
+            IReadOnlyList<(ServerEntry server, int port)> entries,
+            string? outboundInterface)
         {
-            return server.Protocol.ToLowerInvariant() switch
+            var inbounds = new JsonArray();
+            var outbounds = new JsonArray();
+            var rules = new JsonArray();
+
+            for (int i = 0; i < entries.Count; i++)
+            {
+                var (server, port) = entries[i];
+                var inTag = $"in-{i}";
+                var outTag = $"out-{i}";
+
+                AddNode(inbounds, new JsonObject
+                {
+                    ["tag"] = inTag,
+                    ["protocol"] = "socks",
+                    ["listen"] = "127.0.0.1",
+                    ["port"] = port,
+                    ["settings"] = new JsonObject
+                    {
+                        ["auth"] = "noauth",
+                        ["udp"] = false
+                    }
+                });
+
+                var outbound = BuildProxyOutbound(server, outTag);
+                if (outboundInterface is not null)
+                    ApplyOutboundInterface(outbound, outboundInterface);
+                AddNode(outbounds, outbound);
+
+                AddNode(rules, new JsonObject
+                {
+                    ["type"] = "field",
+                    ["inboundTag"] = CreateStringArray(inTag),
+                    ["outboundTag"] = outTag
+                });
+            }
+
+            AddNode(outbounds, new JsonObject
+            {
+                ["tag"] = "direct",
+                ["protocol"] = "freedom",
+                ["settings"] = new JsonObject()
+            });
+
+            var config = new JsonObject
+            {
+                ["log"] = new JsonObject { ["loglevel"] = "warning" },
+                ["inbounds"] = inbounds,
+                ["outbounds"] = outbounds,
+                ["routing"] = new JsonObject
+                {
+                    ["domainStrategy"] = "AsIs",
+                    ["rules"] = rules
+                }
+            };
+
+            return config.ToJsonString(JsonOpts);
+        }
+
+        private static JsonObject BuildProxyOutbound(ServerEntry server, string tag)
+        {
+            var outbound = server.Protocol.ToLowerInvariant() switch
             {
                 "vmess" => BuildVmessOutbound(server),
                 "vless" => BuildVlessOutbound(server),
@@ -171,6 +233,8 @@ namespace LinqqXrayVPN.Services
                 "trojan" => BuildTrojanOutbound(server),
                 _ => BuildSsOutbound(server)
             };
+            outbound["tag"] = tag;
+            return outbound;
         }
 
         private static JsonObject BuildSsOutbound(ServerEntry server)
@@ -336,7 +400,11 @@ namespace LinqqXrayVPN.Services
 
             if (security == "tls")
             {
-                var sni = string.IsNullOrWhiteSpace(server.Sni) ? server.Host : server.Sni;
+                // CDN/xhttp nodes need SNI to match the Host header when no explicit SNI is given.
+                var hostHeader = (network == "ws" || network == "xhttp") ? server.WsHost : null;
+                var sni = !string.IsNullOrWhiteSpace(server.Sni) ? server.Sni
+                    : !string.IsNullOrWhiteSpace(hostHeader) ? hostHeader
+                    : server.Host;
                 var fingerprint = string.IsNullOrWhiteSpace(server.Fingerprint) ? "chrome" : server.Fingerprint;
                 var tlsSettings = new JsonObject
                 {
@@ -344,6 +412,11 @@ namespace LinqqXrayVPN.Services
                     ["fingerprint"] = fingerprint,
                     ["allowInsecure"] = server.AllowInsecure
                 };
+
+                // XHTTP rides HTTP/2; without h2 in ALPN many nginx/CDN fronts never hand the
+                // request to xray, which shows up as a timeout / "No response".
+                if (network == "xhttp")
+                    tlsSettings["alpn"] = CreateStringArray("h2");
 
                 if (string.Equals(server.Protocol, "vless", StringComparison.OrdinalIgnoreCase)
                     && !string.IsNullOrWhiteSpace(server.EchConfigList))
@@ -407,13 +480,34 @@ namespace LinqqXrayVPN.Services
             {
                 var settings = new JsonObject
                 {
-                    ["path"] = server.Path
+                    ["path"] = string.IsNullOrWhiteSpace(server.Path) ? "/" : server.Path
                 };
 
-                if (!string.IsNullOrWhiteSpace(server.WsHost))
+                // If host is omitted, xray may send the resolved IP as the HTTP Host header
+                // and the front rejects it. Default to the share-link hostname.
+                var xhttpHost = !string.IsNullOrWhiteSpace(server.WsHost) ? server.WsHost : server.Host;
+                if (!string.IsNullOrWhiteSpace(xhttpHost))
+                    settings["host"] = xhttpHost;
+
+                var mode = XhttpSettings.NormalizeMode(server.XhttpMode);
+
+                if (FinalmaskJson.Parse(server.XhttpExtra) is JsonObject extra)
                 {
-                    settings["host"] = server.WsHost;
+                    NormalizeXhttpDownloadSettings(extra);
+                    settings["extra"] = extra;
+
+                    if (mode == XhttpSettings.StreamOne && extra["downloadSettings"] is JsonObject)
+                        mode = string.Empty;
                 }
+
+                // xray maps empty/auto → packet-up (POST /path/session/seq). Steal-oneself
+                // TLS fronts (nginx/CDN) reject that with 405; Reality already auto-picks
+                // stream-one for the same reason. Do the same for TLS when the link omits mode.
+                if (string.IsNullOrEmpty(mode) && security == "tls")
+                    mode = XhttpSettings.StreamOne;
+
+                if (!string.IsNullOrEmpty(mode))
+                    settings["mode"] = mode;
 
                 stream["xhttpSettings"] = settings;
             }
@@ -428,6 +522,43 @@ namespace LinqqXrayVPN.Services
             if (finalmask is JsonObject)
             {
                 streamSettings["finalmask"] = finalmask;
+            }
+        }
+
+        // v2board panels emit compact downloadSettings ({server, servername, path, port});
+        // xray wants a StreamConfig (address + network/security/tlsSettings/xhttpSettings).
+        private static void NormalizeXhttpDownloadSettings(JsonObject extra)
+        {
+            if (extra["downloadSettings"] is not JsonObject download)
+                return;
+
+            var isCompact = download["server"] is not null
+                || download["servername"] is not null
+                || download["path"] is not null;
+            if (!isCompact)
+                return;
+
+            if (download["address"] is null && download["server"] is JsonNode address)
+            {
+                download.Remove("server");
+                download["address"] = address;
+            }
+
+            if (download["network"] is null)
+                download["network"] = "xhttp";
+
+            if (download["xhttpSettings"] is null && download["path"] is JsonNode path)
+            {
+                download.Remove("path");
+                download["xhttpSettings"] = new JsonObject { ["path"] = path };
+            }
+
+            if (download["tlsSettings"] is null && download["servername"] is JsonNode serverName)
+            {
+                download.Remove("servername");
+                if (download["security"] is null)
+                    download["security"] = "tls";
+                download["tlsSettings"] = new JsonObject { ["serverName"] = serverName };
             }
         }
 

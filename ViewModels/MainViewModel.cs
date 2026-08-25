@@ -68,17 +68,19 @@ namespace LinqqXrayVPN.ViewModels
             var latencyProbe = new LatencyProbeService(
                 new TcpConnectProbeService(),
                 new PingProbeService());
+            var realLatencyProbe = new RealLatencyProbeService(settings, tunService);
             var UnlockCheck = new UnlockCheckService();
 
             Title = Loc.GetString("set16.3");
 
-            ServerList   = new ServerListViewModel(dialogs, settings);
+            ServerList   = new ServerListViewModel(dialogs, settings, latencyProbe, realLatencyProbe);
             ServerDetail = new ServerDetailViewModel(latencyProbe, UnlockCheck);
             ControlPanel = new ControlPanelViewModel(dialogs, settings, xray, tunService, startupService, updateService);
             Personalize  = new PersonalizeViewModel(settings);
 
             // Wire ControlPanel so it knows the current selected server
             ControlPanel.GetSelectedServer = () => ServerList.SelectedServer;
+            realLatencyProbe.IsTunActive = () => ControlPanel.IsRunning && ControlPanel.IsTunMode;
 
             ServerList.PropertyChanged   += OnServerListPropertyChanged;
             ControlPanel.PropertyChanged += OnControlPanelPropertyChanged;

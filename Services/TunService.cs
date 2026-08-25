@@ -42,6 +42,21 @@ public class TunService
     public string GetExpectedWintunPath() => Path.Combine(_engineDirectory, "wintun.dll");
 
     /// <summary>
+    /// Physical NIC to pin a helper-core outbound to while TUN owns the default route.
+    /// Honors an explicit interface name; "auto"/empty falls back to the default outbound NIC.
+    /// </summary>
+    public string? ResolveOutboundInterface(string? configuredInterface)
+    {
+        if (!string.IsNullOrWhiteSpace(configuredInterface)
+            && !string.Equals(configuredInterface.Trim(), "auto", StringComparison.OrdinalIgnoreCase))
+        {
+            return configuredInterface.Trim();
+        }
+
+        return DetectDefaultOutboundInterfaceName(preferIPv6: false);
+    }
+
+    /// <summary>
     /// Finds the physical interface Windows would use for normal outbound IPv4 traffic.
     /// TUN mode binds xray outbounds to this interface to avoid sending xray's own
     /// proxy connection back into the TUN adapter.

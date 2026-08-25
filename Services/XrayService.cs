@@ -10,7 +10,7 @@ namespace LinqqXrayVPN.Services
 {
     public class XrayService
     {
-        private static readonly string ExePath = Path.Combine(
+        public static readonly string ExePath = Path.Combine(
             AppContext.BaseDirectory, "Assets", "engine", "xray.exe");
 
         public static readonly string RulesDir = Path.Combine(

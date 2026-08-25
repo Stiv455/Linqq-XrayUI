@@ -134,6 +134,11 @@ namespace LinqqXrayVPN.Services
 
             var txtPath     = new TextBox { Header = Loc.GetString("set12.14"), Text = existing?.Path ?? string.Empty };
             var txtWsHost   = new TextBox { Header = Loc.GetString("set12.15"), Text = existing?.WsHost ?? string.Empty };
+            var cmbXhttpMode = new ComboBox { Header = "XHTTP mode", MinWidth = 200 };
+            cmbXhttpMode.Items.Add(string.Empty);
+            foreach (var m in XhttpSettings.Modes)
+                cmbXhttpMode.Items.Add(m);
+            cmbXhttpMode.SelectedItem = XhttpSettings.NormalizeMode(existing?.XhttpMode);
             var cmbSecurity = new ComboBox { Header = Loc.GetString("set12.16"), MinWidth = 200 };
             foreach (var s in new[] { "none", "tls", "reality" })
                 cmbSecurity.Items.Add(s);
@@ -183,6 +188,7 @@ namespace LinqqXrayVPN.Services
             var rowAlterId    = Wrap(numAlterId);
             var rowPath       = Wrap(txtPath);
             var rowWsHost     = Wrap(txtWsHost);
+            var rowXhttpMode  = Wrap(cmbXhttpMode);
             var rowSni        = Wrap(txtSni);
             var rowFp         = Wrap(txtFp);
             var rowAllowInsecure = Wrap(chkAllowInsecure);
@@ -223,6 +229,7 @@ namespace LinqqXrayVPN.Services
                 rowAlterId   .Visibility = isVmess                    ? Visibility.Visible : Visibility.Collapsed;
                 rowPath      .Visibility = (hasWs || hasXhttp || hasGrpc) ? Visibility.Visible : Visibility.Collapsed;
                 rowWsHost    .Visibility = (hasWs || hasXhttp)        ? Visibility.Visible : Visibility.Collapsed;
+                rowXhttpMode .Visibility = hasXhttp                   ? Visibility.Visible : Visibility.Collapsed;
                 rowSni       .Visibility = (hasTls || isHysteria2)    ? Visibility.Visible : Visibility.Collapsed;
                 rowFp        .Visibility = hasTls                     ? Visibility.Visible : Visibility.Collapsed;
                 rowAllowInsecure.Visibility = (hasTls || isHysteria2) ? Visibility.Visible : Visibility.Collapsed;
@@ -257,7 +264,7 @@ namespace LinqqXrayVPN.Services
                 {
                     txtName, txtHost, numPort, cmbProtocol,
                     rowEncryption, rowPassword, rowUuid, rowAlterId,
-                    cmbNetwork, rowPath, rowWsHost,
+                    cmbNetwork, rowPath, rowWsHost, rowXhttpMode,
                     cmbSecurity, rowSni, rowFp, rowAllowInsecure, rowEchConfigList, rowEchForceQuery,
                     rowPk, rowSid, rowSpx, rowFlow, rowVlessEncryption,
                     rowFinalmask
@@ -293,6 +300,9 @@ namespace LinqqXrayVPN.Services
             entry.Network     = cmbNetwork.SelectedItem?.ToString() ?? "tcp";
             entry.Path        = txtPath.Text.Trim();
             entry.WsHost      = txtWsHost.Text.Trim();
+            entry.XhttpMode   = string.Equals(entry.Network, "xhttp", StringComparison.OrdinalIgnoreCase)
+                ? (cmbXhttpMode.SelectedItem?.ToString() ?? string.Empty)
+                : string.Empty;
             entry.Security    = cmbSecurity.SelectedItem?.ToString() ?? "none";
             entry.Sni         = txtSni.Text.Trim();
             entry.Fingerprint = txtFp.Text.Trim();

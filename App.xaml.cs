@@ -38,11 +38,14 @@ namespace LinqqXrayVPN
             var parentPid = TryGetParentProcessId(cmdArgs);
             var startMinimized = cmdArgs.Contains(StartupService.StartupMinimizedArgument, StringComparer.OrdinalIgnoreCase);
             var isTunLaunch = cmdArgs.Contains(TunArgument, StringComparer.OrdinalIgnoreCase);
-            var isTunTakeover = isTunLaunch && parentPid.HasValue;
+            // Language restart (and TUN elevation) spawn a sibling with --parent-pid while
+            // the old process is still alive. Skip single-instance redirect or the new
+            // process is treated as a duplicate, killed, and the old one appears hung.
+            var isRestartTakeover = parentPid.HasValue;
 
             Debug.WriteLine($"[Launch] startMinimized = {startMinimized}, isTunLaunch = {isTunLaunch}");
 
-            if (!isTunTakeover && await TryRedirectToExistingInstanceAsync(startMinimized))
+            if (!isRestartTakeover && await TryRedirectToExistingInstanceAsync(startMinimized))
             {
                 Debug.WriteLine("[Launch] Redirected to existing instance");
                 return;
@@ -82,7 +85,7 @@ namespace LinqqXrayVPN
 
             if (parentPid.HasValue)
             {
-                _ = TakeOverPreviousInstanceAsync(parentPid.Value, isTunTakeover);
+                _ = TakeOverPreviousInstanceAsync(parentPid.Value, registerSingleInstanceAfterTakeover: true);
             }
 
             if (_pendingExternalActivation && _window is MainWindow mainWindow)

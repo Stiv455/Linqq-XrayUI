@@ -194,7 +194,9 @@ namespace LinqqXrayVPN.ViewModels
             bool languageChanged = !string.Equals(oldLanguage, s.Language, StringComparison.OrdinalIgnoreCase);
             if (languageChanged)
             {
-                await ShowRestartDialogAsync();
+                var restart = await ShowRestartDialogAsync();
+                if (restart)
+                    return;
             }
 
             CloseRequested?.Invoke(this, EventArgs.Empty);
@@ -251,7 +253,7 @@ namespace LinqqXrayVPN.ViewModels
                 }
             }
         }
-        private async Task ShowRestartDialogAsync()
+        private async Task<bool> ShowRestartDialogAsync()
         {
             var dialog = new ContentDialog
             {
@@ -264,30 +266,53 @@ namespace LinqqXrayVPN.ViewModels
             };
 
             var result = await dialog.ShowAsync();
+            if (result != ContentDialogResult.Primary)
+                return false;
 
-            if (result == ContentDialogResult.Primary)
-            {
-                RestartApplication();
-            }
+            RestartApplication();
+            return true;
         }
+
         private static void RestartApplication()
         {
             try
             {
-                var exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
-                if (!string.IsNullOrEmpty(exePath))
+                var exePath = Process.GetCurrentProcess().MainModule?.FileName;
+                if (string.IsNullOrEmpty(exePath))
                 {
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                    {
-                        FileName = exePath,
-                        UseShellExecute = true,
-                        Arguments = string.Join(" ", Environment.GetCommandLineArgs().Skip(1))
-                    });
+                    Environment.Exit(0);
+                    return;
                 }
-            }
-            catch { }
 
-            Environment.Exit(0);
+                var currentPid = Environment.ProcessId;
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = exePath,
+                    Arguments = $"--parent-pid={currentPid}",
+                    UseShellExecute = true
+                });
+
+                _ = Task.Run(async () =>
+                {
+                    await Task.Delay(800);
+                    try
+                    {
+                        Process.GetCurrentProcess().Kill();
+                    }
+                    catch
+                    {
+                    }
+                });
+
+                if (Application.Current is App app)
+                    app.RequestShutdown();
+                else
+                    Environment.Exit(0);
+            }
+            catch
+            {
+                Environment.Exit(0);
+            }
         }
 
     }

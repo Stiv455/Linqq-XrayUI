@@ -41,7 +41,10 @@ namespace LinqqXrayVPN.ViewModels
 
         private readonly IDialogService  _dialogs;
         private readonly SettingsService _settings;
+        private readonly LatencyProbeService _latencyProbe;
+        private readonly RealLatencyProbeService _realLatencyProbe;
         private readonly SemaphoreSlim   _settingsWriteLock = new(1, 1);
+        private const int MaxConcurrentProbes = 16;
         private ObservableCollection<ServerEntry> _servers = new();
         private ServerEntry? _selectedServer;
         private readonly List<ServerEntry> _selectedServers = new();
@@ -62,16 +65,25 @@ namespace LinqqXrayVPN.ViewModels
         private string _searchQuery = string.Empty;
         private bool _isFilterPanelOpen;
         private bool _suppressRebuild;
+        private bool _rebuildAllInProgress;
         private ServerSortMode _sortMode = ServerSortMode.Default;
+        private bool _isTestingLatencies;
+        private string _latencyTestMode = "real";
         private List<SubscriptionEntry> _knownSubscriptions = new();
          
         public ObservableCollection<ServerGroupChip> GroupChips { get; } = new();
         public ObservableCollection<ServerEntry>     VisibleServers { get; } = new();
 
-        public ServerListViewModel(IDialogService dialogs, SettingsService settings)
+        public ServerListViewModel(
+            IDialogService dialogs,
+            SettingsService settings,
+            LatencyProbeService latencyProbe,
+            RealLatencyProbeService realLatencyProbe)
         {
             _dialogs  = dialogs;
             _settings = settings;
+            _latencyProbe = latencyProbe;
+            _realLatencyProbe = realLatencyProbe;
 
             ProtocolColorStore.ColorsChanged += OnProtocolColorsChanged;
             _servers.CollectionChanged += OnServersCollectionChanged;
@@ -123,7 +135,8 @@ namespace LinqqXrayVPN.ViewModels
                         return;
                     }
 
-                    RebuildGroupedView();
+                    if (!_rebuildAllInProgress)
+                        RebuildGroupedView();
                     OnPropertyChanged(nameof(CanReorderInCurrentChip));
                 }
             }
@@ -145,8 +158,10 @@ namespace LinqqXrayVPN.ViewModels
                     OnPropertyChanged(nameof(IsSortDefault));
                     OnPropertyChanged(nameof(IsSortActive));
                     OnPropertyChanged(nameof(IsSortProtocol));
+                    OnPropertyChanged(nameof(IsSortLatency));
                     OnPropertyChanged(nameof(CanReorderInCurrentChip));
-                    RebuildGroupedView();
+                    if (!_rebuildAllInProgress)
+                        RebuildGroupedView();
                 }
             }
         }
@@ -154,6 +169,8 @@ namespace LinqqXrayVPN.ViewModels
         // The "Current connection" sort is only available when chip =All—there is no need to top
         // a single active node to the top of the subset under other chips
         public bool CanSortByActive => _selectedChip?.Kind == ServerGroupChip.ChipKind.All;
+
+        public bool CanSortByLatency => Servers.Any(s => s.LatencyMs.HasValue);
 
         // Shadow props for RadioMenuFlyoutItem.IsChecked TwoWay binding.
         public bool IsSortDefault
@@ -172,6 +189,24 @@ namespace LinqqXrayVPN.ViewModels
         {
             get => _sortMode == ServerSortMode.Protocol;
             set { if (value) SortMode = ServerSortMode.Protocol; }
+        }
+
+        public bool IsSortLatency
+        {
+            get => _sortMode == ServerSortMode.Latency;
+            set { if (value) SortMode = ServerSortMode.Latency; }
+        }
+
+        public bool IsTestingLatencies
+        {
+            get => _isTestingLatencies;
+            private set => SetProperty(ref _isTestingLatencies, value);
+        }
+
+        public string LatencyTestMode
+        {
+            get => _latencyTestMode;
+            set => SetProperty(ref _latencyTestMode, value ?? "real");
         }
 
         public bool SelectAllGroup()
@@ -369,7 +404,22 @@ namespace LinqqXrayVPN.ViewModels
 
         private void RebuildAll()
         {
-            RebuildGroupChips();
+            _rebuildAllInProgress = true;
+            try
+            {
+                if (SortMode == ServerSortMode.Latency && !CanSortByLatency)
+                    SortMode = ServerSortMode.Default;
+
+                OnPropertyChanged(nameof(CanSortByLatency));
+                OnPropertyChanged(nameof(IsSortDefault));
+                OnPropertyChanged(nameof(IsSortLatency));
+
+                RebuildGroupChips();
+            }
+            finally
+            {
+                _rebuildAllInProgress = false;
+            }
             RebuildGroupedView();
         }
 
@@ -485,6 +535,7 @@ namespace LinqqXrayVPN.ViewModels
 
         private void RebuildGroupedView()
         {
+            var previousSelection = SelectedServer;
             VisibleServers.Clear();
 
             var query = _searchQuery.Trim();
@@ -511,14 +562,31 @@ namespace LinqqXrayVPN.ViewModels
                     filtered.OrderBy(s => s.IsActive ? 0 : 1),
                 ServerSortMode.Protocol =>
                     filtered.OrderBy(s => s.Protocol ?? string.Empty, StringComparer.OrdinalIgnoreCase),
+                ServerSortMode.Latency =>
+                    filtered
+                        .OrderBy(s => LatencySortBucket(s.LatencyMs))
+                        .ThenBy(s => s.LatencyMs ?? int.MaxValue),
                 _ => filtered,
             };
 
             foreach (var server in ordered)
                 VisibleServers.Add(server);
 
+            if (previousSelection != null && SelectedServer == null &&
+                VisibleServers.Contains(previousSelection))
+            {
+                SelectedServer = previousSelection;
+            }
+
             OnPropertyChanged(nameof(CanReorderInCurrentChip));
         }
+
+        private static int LatencySortBucket(int? latencyMs) => latencyMs switch
+        {
+            null => 2,
+            < 0 => 1,
+            _ => 0,
+        };
 
         private async Task ReloadKnownSubscriptionsAsync()
         {
@@ -803,6 +871,87 @@ namespace LinqqXrayVPN.ViewModels
             LastUpdated = sub.LastUpdated,
             LastError   = sub.LastError,
         };
+
+        // ── Latency batch test ────────────────────────────────────────────────
+
+        [RelayCommand]
+        private async Task TestAllLatencies()
+        {
+            var servers = VisibleServers.ToList();
+            if (servers.Count == 0) return;
+
+            IsTestingLatencies = true;
+            _latencySortUnlocked = false;
+            _latencySortRefreshPending = false;
+            try
+            {
+                if (LatencyTestMode == "real")
+                    await TestRealLatenciesAsync(servers);
+                else
+                    await TestConnectLatenciesAsync(servers);
+            }
+            finally
+            {
+                var refreshLatencySort = _latencySortRefreshPending
+                    && SortMode == ServerSortMode.Latency;
+                _latencySortRefreshPending = false;
+                IsTestingLatencies = false;
+
+                if (refreshLatencySort)
+                    RebuildGroupedView();
+            }
+        }
+
+        private async Task TestConnectLatenciesAsync(List<ServerEntry> servers)
+        {
+            using var throttle = new SemaphoreSlim(MaxConcurrentProbes);
+            var timeout = TimeSpan.FromSeconds(3);
+
+            var tasks = servers.Select(async server =>
+            {
+                await throttle.WaitAsync();
+                try
+                {
+                    var result = await _latencyProbe.ProbeAsync(server, timeout);
+                    ApplyLatencyResult(server, result.Status == LatencyProbeStatus.Success
+                        ? result.Milliseconds ?? -1
+                        : -1);
+                }
+                finally
+                {
+                    throttle.Release();
+                }
+            });
+
+            await Task.WhenAll(tasks);
+        }
+
+        private Task TestRealLatenciesAsync(List<ServerEntry> servers)
+        {
+            return _realLatencyProbe.ProbeAllAsync(servers, ApplyLatencyResult);
+        }
+
+        private bool _latencySortUnlocked;
+        private bool _latencySortRefreshPending;
+
+        private void ApplyLatencyResult(ServerEntry server, int latencyMs)
+        {
+            server.LatencyMs = latencyMs;
+
+            if (!_latencySortUnlocked)
+            {
+                _latencySortUnlocked = true;
+                OnPropertyChanged(nameof(CanSortByLatency));
+            }
+
+            if (SortMode != ServerSortMode.Latency)
+                return;
+
+            if (IsTestingLatencies)
+                _latencySortRefreshPending = true;
+            else
+                RebuildGroupedView();
+        }
 
         // ── Add manual ────────────────────────────────────────────────────────
 

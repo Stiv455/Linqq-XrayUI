@@ -383,13 +383,15 @@
                                        VerticalAlignment="Center"
                                        Margin="0,0,8,0" />
 
-                            <Button Grid.Column="2"
+                            <Button x:Name="RetestLatencyButton"
+                                    Grid.Column="2"
                                     Command="{x:Bind ViewModel.TestLatencyCommand}"
                                     IsEnabled="{x:Bind ViewModel.CanTestLatency, Mode=OneWay}"
                                     Background="Transparent"
                                     BorderBrush="Transparent"
                                     Padding="8"
-                                    ToolTipService.ToolTip="{x:Bind Loc.GetString('set6.18'), Mode=OneWay}"
+                                    AutomationProperties.Name="{x:Bind Loc.GetString('set8.16'), Mode=OneWay}"
+                                    ToolTipService.ToolTip="{x:Bind Loc.GetString('set8.16'), Mode=OneWay}"
                                     VerticalAlignment="Center">
                                 <FontIcon Glyph="&#xE895;"
                                           FontSize="14" />

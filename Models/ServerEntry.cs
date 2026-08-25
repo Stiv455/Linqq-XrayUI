@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using LinqqXrayVPN.Services;
 
 namespace LinqqXrayVPN.Models
 {
@@ -20,6 +21,8 @@ namespace LinqqXrayVPN.Models
             Network = "tcp";
             Path = string.Empty;
             WsHost = string.Empty;
+            XhttpMode = string.Empty;
+            XhttpExtra = string.Empty;
             Security = string.Empty;
             Sni = string.Empty;
             Fingerprint = string.Empty;
@@ -58,6 +61,13 @@ namespace LinqqXrayVPN.Models
         [ObservableProperty]
         public partial bool IsActive { get; set; }
 
+        /// <summary>Runtime-only probe result in ms; null = not measured; negative = failed.</summary>
+        [JsonIgnore]
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(LatencyText))]
+        [NotifyPropertyChangedFor(nameof(HasLatency))]
+        public partial int? LatencyMs { get; set; }
+
         [ObservableProperty]
         public partial bool IsFavorite { get; set; }
 
@@ -77,6 +87,14 @@ namespace LinqqXrayVPN.Models
 
         [ObservableProperty]
         public partial string WsHost { get; set; }
+
+        /// <summary>XHTTP mode: auto | packet-up | stream-up | stream-one. Empty = xray default (auto).</summary>
+        [ObservableProperty]
+        public partial string XhttpMode { get; set; }
+
+        /// <summary>Raw xhttpSettings.extra JSON (padding/xmux), shared as the "extra" URI parameter.</summary>
+        [ObservableProperty]
+        public partial string XhttpExtra { get; set; }
 
         [ObservableProperty]
         public partial int AlterId { get; set; }
@@ -140,6 +158,17 @@ namespace LinqqXrayVPN.Models
             "trojan" => "Trojan",
             _ => Protocol ?? string.Empty
         };
+
+        [JsonIgnore]
+        public string LatencyText => LatencyMs switch
+        {
+            null => string.Empty,
+            < 0 => LocalizationService.Instance.GetString("set16.9"),
+            int ms => $"{ms} ms",
+        };
+
+        [JsonIgnore]
+        public bool HasLatency => LatencyMs.HasValue;
 
         public void RefreshProtocolColor() => OnPropertyChanged(nameof(Protocol));
     }

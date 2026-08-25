@@ -35,7 +35,7 @@ namespace LinqqXrayVPN
         private const uint WmNclButtonDown   = 0x00A1;
         private const uint WmNclButtonDblClk = 0x00A3;
         private const int HtCaption = 0x0002;
-        private const int FullWindowWidth = 1150;
+        private const int FullWindowWidth = 1200;
         private const int FullWindowHeight = 650;
         private const int MiniWindowWidth = 330;
         private const int MiniWindowHeight = 136;
